@@ -4,8 +4,10 @@ baseline:
   namespace: "tas-monitoring"
   instance_name: "securesign-sample"
   
+# TODO: OIDC Configuration Analysis Required
+# - Evaluate impact of different OIDC providers on resource utilization
 oidc:
-  issuer_url: "https://keycloak-keycloak-system.apps.rosa.wfqui-tgr4w-vs3.2g7z.p3.openshiftapps.com/auth/realms/trusted-artifact-signer"
+  issuer_url: "https://your-oidc-issuer-url"
   client_id: "trusted-artifact-signer"
   type: "email"
   
