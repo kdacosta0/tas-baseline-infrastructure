@@ -1,9 +1,7 @@
 # TAS Baseline Infrastructure Makefile
-# Minimalistic deploy and cleanup automation
 
 .PHONY: help deploy cleanup cleanup-apps check logs status
 
-# Default target
 help:
 	@echo "TAS Baseline Infrastructure"
 	@echo ""
@@ -55,7 +53,7 @@ cleanup:
 		tufroots.rhtas.redhat.com
 	@echo "Complete cleanup finished"
 
-# Cleanup apps only (keep operators for faster re-deploy)
+# Cleanup apps only (keep operators)
 cleanup-apps:
 	@echo "Cleaning up TAS applications only..."
 	oc delete namespace tas-monitoring --ignore-not-found=true
@@ -73,8 +71,3 @@ status:
 	@echo ""
 	@echo "Pods:"
 	@oc get pods -n tas-monitoring 2>/dev/null || echo "  No pods in tas-monitoring"
-
-# Show recent logs
-logs:
-	@echo "Recent TAS logs:"
-	@oc logs -n tas-monitoring --tail=20 -l app.kubernetes.io/part-of=tas-monitoring 2>/dev/null || echo "No logs available"

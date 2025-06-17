@@ -13,9 +13,8 @@
           app.kubernetes.io/name: "{{ baseline.instance_name }}"
           app.kubernetes.io/part-of: tas-monitoring
         annotations:
-          rhtas.redhat.com/metrics: 'true'  # Important for monitoring
+          rhtas.redhat.com/metrics: 'true'
       spec:
-        # CTLog Configuration
         ctlog:
           monitoring:
             enabled: true
@@ -27,7 +26,6 @@
               cpu: "{{ resources.ctlog.limits.cpu }}"
               memory: "{{ resources.ctlog.limits.memory }}"
             
-        # Fulcio Configuration (Certificate Authority)
         fulcio:
           certificate:
             commonName: "{{ certificates.fulcio.common_name }}"
@@ -51,7 +49,6 @@
               cpu: "{{ resources.fulcio.limits.cpu }}"
               memory: "{{ resources.fulcio.limits.memory }}"
             
-        # Rekor Configuration (Transparency Log)
         rekor:
           monitoring:
             enabled: true
@@ -65,7 +62,6 @@
               cpu: "{{ resources.rekor.limits.cpu }}"
               memory: "{{ resources.rekor.limits.memory }}"
             
-        # Trillian Configuration (Backend Database)
         trillian:
           database:
             create: true
@@ -79,7 +75,6 @@
               cpu: "{{ resources.trillian.limits.cpu }}"
               memory: "{{ resources.trillian.limits.memory }}"
             
-        # TSA Configuration (Timestamp Authority)
         tsa:
           externalAccess:
             enabled: true
@@ -109,7 +104,6 @@
                 organizationEmail: "{{ certificates.organization_email }}"
                 organizationName: "{{ certificates.organization_name }}"
                 
-        # TUF Configuration (The Update Framework)
         tuf:
           externalAccess:
             enabled: true
@@ -126,6 +120,7 @@
           rootKeySecretRef:
             name: tuf-root-keys
     wait: false 
+  no_log: true 
 
 - name: "Display TAS deployment status"
   debug:
@@ -133,9 +128,8 @@
       - "TAS Securesign deployment initiated"
       - "Instance: {{ baseline.instance_name }}"
       - "Namespace: {{ baseline_namespace }}"
-      - "Starting component readiness checks..."
 
-# Check each TAS component individually
+# Check each TAS component readiness
 - name: "Check Trillian component readiness"
   k8s_info:
     api_version: rhtas.redhat.com/v1alpha1
@@ -254,7 +248,7 @@
     (securesign_status.resources[0].status.conditions | 
      selectattr('type', 'equalto', 'Ready') | 
      selectattr('status', 'equalto', 'True') | list | length > 0)
-
+  no_log: true
 
 - name: "Verify ServiceMonitors are created"
   k8s_info:
@@ -265,3 +259,4 @@
   retries: 5
   delay: 30
   until: service_monitors.resources | length >= 6  # Expect at least 6 ServiceMonitors
+  no_log: true
