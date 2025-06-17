@@ -1,0 +1,65 @@
+# Install RHTAS and Grafana operators
+---
+- name: "Install RHTAS Operator"
+  k8s:
+    definition:
+      apiVersion: operators.coreos.com/v1alpha1
+      kind: Subscription
+      metadata:
+        name: "{{ operators.rhtas.name }}"
+        namespace: "{{ operators.rhtas.namespace }}"
+      spec:
+        channel: "{{ operators.rhtas.channel }}"
+        installPlanApproval: Automatic
+        name: "{{ operators.rhtas.name }}"
+        source: "{{ operators.rhtas.source }}"
+        sourceNamespace: "{{ operators.rhtas.sourceNamespace }}"
+    wait: true
+    wait_timeout: "{{ validation.operator_timeout }}"
+
+- name: "Install Grafana Operator"  
+  k8s:
+    definition:
+      apiVersion: operators.coreos.com/v1alpha1
+      kind: Subscription
+      metadata:
+        name: "{{ operators.grafana.name }}"
+        namespace: "{{ operators.grafana.namespace }}"
+      spec:
+        channel: "{{ operators.grafana.channel }}"
+        installPlanApproval: Automatic
+        name: "{{ operators.grafana.name }}"
+        source: "{{ operators.grafana.source }}"
+        sourceNamespace: "{{ operators.grafana.sourceNamespace }}"
+    wait: true
+    wait_timeout: "{{ validation.operator_timeout }}"
+
+- name: "Wait for RHTAS Operator to be ready"
+  k8s_info:
+    api_version: operators.coreos.com/v1alpha1
+    kind: ClusterServiceVersion
+    namespace: "{{ operators.rhtas.namespace }}"
+    label_selectors:
+      - "operators.coreos.com/rhtas-operator.openshift-operators"
+  register: rhtas_csv_status
+  retries: 30
+  delay: 10
+  until: >
+    rhtas_csv_status.resources | length > 0 and
+    rhtas_csv_status.resources[0].status is defined and
+    rhtas_csv_status.resources[0].status.phase == "Succeeded"
+
+- name: "Wait for Grafana Operator to be ready"
+  k8s_info:
+    api_version: operators.coreos.com/v1alpha1
+    kind: ClusterServiceVersion
+    namespace: "{{ operators.grafana.namespace }}"
+    label_selectors:
+      - "operators.coreos.com/grafana-operator.openshift-operators"
+  register: grafana_csv_status
+  retries: 30
+  delay: 10
+  until: >
+    grafana_csv_status.resources | length > 0 and
+    grafana_csv_status.resources[0].status is defined and
+    grafana_csv_status.resources[0].status.phase == "Succeeded"

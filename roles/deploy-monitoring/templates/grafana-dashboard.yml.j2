@@ -1,0 +1,405 @@
+apiVersion: grafana.integreatly.org/v1beta1
+kind: GrafanaDashboard
+metadata:
+  name: {{ monitoring.dashboard.name }}
+  namespace: {{ baseline_namespace }}
+spec:
+  instanceSelector:
+    matchLabels:
+      dashboards: {{ monitoring.grafana.instance_name }}
+  json: |
+    {
+      "id": null,
+      "uid": "{{ monitoring.dashboard.name }}",
+      "title": "{{ monitoring.dashboard.title }}",
+      "description": "Performance monitoring for TAS baseline infrastructure",
+      "tags": ["tas", "performance", "baseline-infrastructure"],
+      "style": "dark",
+      "timezone": "browser", 
+      "refresh": "{{ monitoring.dashboard.refresh_interval }}",
+      "time": {
+        "from": "now-{{ monitoring.dashboard.time_range }}",
+        "to": "now"
+      },
+      "panels": [
+        {
+          "id": 1,
+          "title": "Primary Business Throughput (ops/s)",
+          "type": "timeseries",
+          "description": "Core business operations - certificates, audit entries, signature processing",
+          "targets": [
+            {
+              "expr": "sum by (job)(rate(fulcio_new_certs{namespace=\"{{ baseline_namespace }}\"}[2m]))",
+              "refId": "A",
+              "legendFormat": "Certificates Issued - {% raw %}{{job}}{% endraw %}"
+            },
+            {
+              "expr": "sum by (job)(rate(rekor_new_entries{namespace=\"{{ baseline_namespace }}\"}[2m]))",
+              "refId": "B", 
+              "legendFormat": "Audit Entries - {% raw %}{{job}}{% endraw %}"
+            },
+            {
+              "expr": "sum by (job)(rate(entries_added{namespace=\"{{ baseline_namespace }}\"}[2m]))",
+              "refId": "C",
+              "legendFormat": "Entries Processed - {% raw %}{{job}}{% endraw %}"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "ops",
+              "custom": {
+                "drawStyle": "line",
+                "lineInterpolation": "smooth",
+                "lineWidth": 3,
+                "fillOpacity": 15,
+                "pointSize": 5,
+                "axisLabel": "Operations per Second"
+              },
+              "color": {"mode": "palette-classic"},
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {"color": "green", "value": null},
+                  {"color": "yellow", "value": 5},
+                  {"color": "red", "value": 20}
+                ]
+              }
+            },
+            "overrides": [
+              {
+                "matcher": {"id": "byRegexp", "options": "Certificates.*"},
+                "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "blue"}}]
+              },
+              {
+                "matcher": {"id": "byRegexp", "options": "Log Entries.*"},
+                "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "green"}}]
+              },
+              {
+                "matcher": {"id": "byRegexp", "options": "Entries Processed.*"},
+                "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "orange"}}]
+              }
+            ]
+          },
+          "options": {
+            "tooltip": {"mode": "multi", "sort": "desc"},
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "calcs": ["max", "mean", "lastNotNull"],
+              "showLegend": true
+            }
+          },
+          "gridPos": {"h": 10, "w": 24, "x": 0, "y": 0}
+        },
+        {
+          "id": 2,
+          "title": "API & System Throughput (ops/s)",
+          "type": "timeseries",
+          "description": "API requests, system operations, and TSA timestamp requests",
+          "targets": [
+            {
+              "expr": "sum by (job)(rate(timestamp_authority_http_requests_total{namespace=\"{{ baseline_namespace }}\"}[2m]))",
+              "refId": "A",
+              "legendFormat": "TSA Requests - {% raw %}{{job}}{% endraw %}"
+            },
+            {
+              "expr": "sum by (job)(rate(http_requests_total{namespace=\"{{ baseline_namespace }}\"}[2m]))",
+              "refId": "B",
+              "legendFormat": "HTTP Requests - {% raw %}{{job}}{% endraw %}"
+            },
+            {
+              "expr": "sum by (job)(rate(grpc_server_handled_total{namespace=\"{{ baseline_namespace }}\"}[2m]))",
+              "refId": "C",
+              "legendFormat": "gRPC Requests - {% raw %}{{job}}{% endraw %}"
+            },
+            {
+              "expr": "sum by (job)(rate(log_rpc_requests{namespace=\"{{ baseline_namespace }}\"}[2m]))",
+              "refId": "D",
+              "legendFormat": "Log RPC - {% raw %}{{job}}{% endraw %}"
+            },
+            {
+              "expr": "sum by (job)(rate(http_reqs{namespace=\"{{ baseline_namespace }}\"}[2m]))",
+              "refId": "E",
+              "legendFormat": "CTLog Requests - {% raw %}{{job}}{% endraw %}"
+            },
+            {
+              "expr": "sum by (job)(rate(rekor_qps_by_api{namespace=\"{{ baseline_namespace }}\"}[2m]))",
+              "refId": "F",
+              "legendFormat": "Rekor QPS - {% raw %}{{job}}{% endraw %}"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "ops",
+              "custom": {
+                "drawStyle": "line",
+                "lineInterpolation": "smooth",
+                "lineWidth": 3,
+                "fillOpacity": 15,
+                "pointSize": 5,
+                "axisLabel": "Operations per Second"
+              }
+            }
+          },
+          "options": {
+            "tooltip": {"mode": "multi", "sort": "desc"},
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "calcs": ["max", "mean", "lastNotNull"],
+              "showLegend": true
+            }
+          },
+          "gridPos": {"h": 16, "w": 24, "x": 0, "y": 10}
+        },
+        {
+          "id": 3,
+          "title": "CPU Usage % by Component",
+          "type": "timeseries",
+          "description": "CPU utilization per TAS component",
+          "targets": [
+            {
+              "expr": "sum by (job)(rate(process_cpu_seconds_total{namespace=\"{{ baseline_namespace }}\"}[2m])) * 100",
+              "refId": "A",
+              "legendFormat": "{% raw %}{{job}}{% endraw %}"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percent",
+              "min": 0,
+              "custom": {
+                "drawStyle": "line",
+                "lineWidth": 3,
+                "fillOpacity": 20,
+                "axisLabel": "CPU Percentage"
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {"color": "green", "value": null},
+                  {"color": "yellow", "value": 50},
+                  {"color": "red", "value": 80}
+                ]
+              }
+            }
+          },
+          "options": {
+            "tooltip": {"mode": "multi"},
+            "legend": {
+              "displayMode": "table",
+              "placement": "right",
+              "calcs": ["max", "mean", "lastNotNull"]
+            }
+          },
+          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 26}
+        },
+        {
+          "id": 4,
+          "title": "Memory Usage MB by Component",
+          "type": "timeseries", 
+          "description": "Actual memory consumption in MB",
+          "targets": [
+            {
+              "expr": "sum by (job)(process_resident_memory_bytes{namespace=\"{{ baseline_namespace }}\"}) / 1024 / 1024",
+              "refId": "A",
+              "legendFormat": "{% raw %}{{job}}{% endraw %}"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "mbytes",
+              "min": 0,
+              "custom": {
+                "drawStyle": "line",
+                "lineWidth": 3,
+                "fillOpacity": 15,
+                "axisLabel": "Memory (MB)"
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {"color": "green", "value": null},
+                  {"color": "yellow", "value": 512},
+                  {"color": "red", "value": 1024}
+                ]
+              }
+            }
+          },
+          "options": {
+            "tooltip": {"mode": "multi"},
+            "legend": {
+              "displayMode": "table", 
+              "placement": "right",
+              "calcs": ["min", "max", "mean", "lastNotNull"]
+            }
+          },
+          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 26}
+        },
+        {
+          "id": 5,
+          "title": "Overall CPU Usage",
+          "type": "gauge",
+          "description": "Total CPU usage across all TAS components",
+          "targets": [
+            {
+              "expr": "sum(rate(process_cpu_seconds_total{namespace=\"{{ baseline_namespace }}\"}[2m])) * 100",
+              "refId": "A",
+              "legendFormat": "Total CPU %"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percent",
+              "min": 0,
+              "max": 200,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {"color": "green", "value": null},
+                  {"color": "yellow", "value": 100},
+                  {"color": "red", "value": 150}
+                ]
+              }
+            }
+          },
+          "gridPos": {"h": 8, "w": 6, "x": 0, "y": 34}
+        },
+        {
+          "id": 6,
+          "title": "Total Memory Usage",
+          "type": "gauge",
+          "description": "Total memory consumption across all components",
+          "targets": [
+            {
+              "expr": "sum(process_resident_memory_bytes{namespace=\"{{ baseline_namespace }}\"}) / 1024 / 1024",
+              "refId": "A",
+              "legendFormat": "Total Memory MB"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "mbytes",
+              "min": 0,
+              "max": 1024,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {"color": "green", "value": null},
+                  {"color": "yellow", "value": 700},
+                  {"color": "red", "value": 900}
+                ]
+              }
+            }
+          },
+          "gridPos": {"h": 8, "w": 6, "x": 6, "y": 34}
+        },
+        {
+          "id": 7,
+          "title": "Performance Summary (Last 10 Minutes)",
+          "type": "stat",
+          "description": "Key performance indicators over the last 10 minutes",
+          "targets": [
+            {
+              "expr": "sum(increase(fulcio_new_certs{namespace=\"{{ baseline_namespace }}\"}[10m]))",
+              "refId": "A",
+              "legendFormat": "Certificates Issued"
+            },
+            {
+              "expr": "sum(increase(rekor_new_entries{namespace=\"{{ baseline_namespace }}\"}[10m]))",
+              "refId": "B",
+              "legendFormat": "Log Entries Created"
+            },
+            {
+              "expr": "sum(increase(entries_added{namespace=\"{{ baseline_namespace }}\"}[10m]))",
+              "refId": "C",
+              "legendFormat": "Signatures Processed"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "custom": {
+                "displayMode": "lcd",
+                "orientation": "horizontal"
+              },
+              "color": {"mode": "thresholds"},
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {"color": "green", "value": null},
+                  {"color": "yellow", "value": 50},
+                  {"color": "red", "value": 100}
+                ]
+              }
+            },
+            "overrides": [
+              {
+                "matcher": {"id": "byName", "options": "Certificates Issued"},
+                "properties": [
+                  {"id": "color", "value": {"mode": "fixed", "fixedColor": "blue"}},
+                  {"id": "unit", "value": "short"},
+                  {"id": "decimals", "value": 0}
+                ]
+              },
+              {
+                "matcher": {"id": "byName", "options": "Log Entries Created"},
+                "properties": [
+                  {"id": "color", "value": {"mode": "fixed", "fixedColor": "green"}},
+                  {"id": "unit", "value": "short"},
+                  {"id": "decimals", "value": 0}
+                ]
+              },
+              {
+                "matcher": {"id": "byName", "options": "Signatures Processed"},
+                "properties": [
+                  {"id": "color", "value": {"mode": "fixed", "fixedColor": "orange"}},
+                  {"id": "unit", "value": "short"},
+                  {"id": "decimals", "value": 0}
+                ]
+              }
+            ]
+          },
+          "options": {
+            "reduceOptions": {
+              "calcs": ["lastNotNull"]
+            },
+            "orientation": "vertical",
+            "textMode": "value_and_name",
+            "colorMode": "value"
+          },
+          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 34}
+        },
+        {
+          "id": 8,
+          "title": "Component Health Status",
+          "type": "stat",
+          "description": "Health check for all TAS components",
+          "targets": [
+            {
+              "expr": "sum(up{namespace=\"{{ baseline_namespace }}\"})",
+              "refId": "A",
+              "legendFormat": "Services Up"
+            },
+            {
+              "expr": "count(up{namespace=\"{{ baseline_namespace }}\"})",
+              "refId": "B",
+              "legendFormat": "Total Services"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "color": {"mode": "thresholds"},
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {"color": "red", "value": null},
+                  {"color": "yellow", "value": 3},
+                  {"color": "green", "value": 5}
+                ]
+              }
+            }
+          },
+          "gridPos": {"h": 4, "w": 24, "x": 0, "y": 42}
+        }
+      ]
+    }
