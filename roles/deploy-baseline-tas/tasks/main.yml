@@ -11,7 +11,7 @@
         labels:
           app.kubernetes.io/instance: "{{ baseline.instance_name }}"
           app.kubernetes.io/name: "{{ baseline.instance_name }}"
-          app.kubernetes.io/part-of: trusted-artifact-signer
+          app.kubernetes.io/part-of: tas-monitoring
         annotations:
           rhtas.redhat.com/metrics: 'true'  # Important for monitoring
       spec:

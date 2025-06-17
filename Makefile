@@ -34,7 +34,7 @@ deploy: check
 cleanup:
 	@echo "Cleaning up TAS resources and operators..."
 	@echo " Removing application namespaces..."
-	oc delete namespace trusted-artifact-signer --ignore-not-found=true
+	oc delete namespace tas-monitoring --ignore-not-found=true
 	@echo " Removing RHTAS operator..."
 	oc delete subscription rhtas-operator -n openshift-operators --ignore-not-found=true
 	oc delete csv -n openshift-operators -l operators.coreos.com/rhtas-operator.openshift-operators --ignore-not-found=true
@@ -58,7 +58,7 @@ cleanup:
 # Cleanup apps only (keep operators for faster re-deploy)
 cleanup-apps:
 	@echo "Cleaning up TAS applications only..."
-	oc delete namespace trusted-artifact-signer --ignore-not-found=true
+	oc delete namespace tas-monitoring --ignore-not-found=true
 	@echo "Apps cleanup complete (operators preserved)"
 
 # Show deployment status
@@ -66,15 +66,15 @@ status:
 	@echo "TAS Deployment Status:"
 	@echo ""
 	@echo "Operators:"
-	@oc get csv -n openshift-operators | grep -E "(rhtas|grafana)" || echo "  No TAS operators found"
+	@oc get csv -n openshift-operators | grep -E "(rhtas|grafana)" || echo "  No operators found"
 	@echo ""
 	@echo "Namespaces:"
-	@oc get ns trusted-artifact-signer || echo "  No TAS namespaces found"
+	@oc get ns tas-monitoring || echo "  No TAS namespaces found"
 	@echo ""
 	@echo "Pods:"
-	@oc get pods -n trusted-artifact-signer 2>/dev/null || echo "  No pods in trusted-artifact-signer"
+	@oc get pods -n tas-monitoring 2>/dev/null || echo "  No pods in tas-monitoring"
 
 # Show recent logs
 logs:
 	@echo "Recent TAS logs:"
-	@oc logs -n trusted-artifact-signer --tail=20 -l app.kubernetes.io/part-of=trusted-artifact-signer 2>/dev/null || echo "No logs available"
+	@oc logs -n tas-monitoring --tail=20 -l app.kubernetes.io/part-of=tas-monitoring 2>/dev/null || echo "No logs available"

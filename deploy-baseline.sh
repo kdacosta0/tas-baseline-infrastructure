@@ -5,7 +5,7 @@
 set -euo pipefail
 
 # Configuration
-BASELINE_NAMESPACE="trusted-artifact-signer"
+BASELINE_NAMESPACE="tas-monitoring"
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 # Colors for output

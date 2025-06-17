@@ -1,11 +1,11 @@
 # Baseline Infrastructure Configuration
 ---
 baseline:
-  namespace: "trusted-artifact-signer"
+  namespace: "tas-monitoring"
   instance_name: "securesign-sample"
   
 oidc:
-  issuer_url: "https://keycloak-keycloak-system.apps.ci-ln-w9v9qvb-76ef8.origin-ci-int-aws.dev.rhcloud.com/auth/realms/trusted-artifact-signer"
+  issuer_url: "https://keycloak-keycloak-system.apps.rosa.wfqui-tgr4w-vs3.2g7z.p3.openshiftapps.com/auth/realms/trusted-artifact-signer"
   client_id: "trusted-artifact-signer"
   type: "email"
   
