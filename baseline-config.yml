@@ -1,0 +1,146 @@
+# Baseline Infrastructure Configuration
+---
+baseline:
+  namespace: "trusted-artifact-signer"
+  instance_name: "securesign-sample"
+  
+oidc:
+  issuer_url: "https://keycloak-keycloak-system.apps.ci-ln-w9v9qvb-76ef8.origin-ci-int-aws.dev.rhcloud.com/auth/realms/trusted-artifact-signer"
+  client_id: "trusted-artifact-signer"
+  type: "email"
+  
+certificates:
+  organization_name: "Red Hat"
+  organization_email: "jdoe@redhat.com"
+  
+  fulcio:
+    common_name: "fulcio.hostname"
+    
+  tsa:
+    common_name: "tsa.hostname"
+
+storage:
+  rekor_size: "5Gi"
+  trillian_db_size: "5Gi"
+  tuf_size: "100Mi"
+
+# Standardized resource limits for performance testing 
+# TO-DO: adjust as needed after performance testing
+resources:
+  fulcio:
+    requests:
+      cpu: "500m"
+      memory: "512Mi"
+    limits:
+      cpu: "1000m"
+      memory: "1Gi"
+  rekor:
+    requests:
+      cpu: "500m"
+      memory: "512Mi"
+    limits:
+      cpu: "1000m"
+      memory: "1Gi"
+  trillian:
+    requests:
+      cpu: "500m"
+      memory: "1Gi"
+    limits:
+      cpu: "1000m"
+      memory: "2Gi"
+  ctlog:
+    requests:
+      cpu: "200m"
+      memory: "256Mi"
+    limits:
+      cpu: "500m"
+      memory: "512Mi"
+  tsa:
+    requests:
+      cpu: "200m"
+      memory: "256Mi"
+    limits:
+      cpu: "500m"
+      memory: "512Mi"
+
+components:
+  fulcio:
+    enabled: true
+    monitoring_enabled: true
+    external_access: true
+    description: "Certificate Authority - issues signing certificates"
+    
+  rekor:
+    enabled: true
+    monitoring_enabled: true
+    external_access: true
+    search_ui_enabled: true
+    backfill_enabled: true
+    description: "Transparency Log - records all signatures"
+    
+  trillian:
+    enabled: true
+    monitoring_enabled: true
+    database_create: true
+    description: "Backend Database - stores transparency log data"
+    
+  ctlog:
+    enabled: true
+    monitoring_enabled: true
+    description: "Certificate Transparency Log"
+    
+  tsa:
+    enabled: true
+    monitoring_enabled: true
+    ntp_monitoring_enabled: true
+    external_access: true
+    description: "Timestamp Authority - provides cryptographic timestamps"
+    
+  tuf:
+    enabled: true
+    external_access: true
+    description: "The Update Framework - distributes public keys"
+
+operators:
+  rhtas:
+    name: "rhtas-operator"
+    namespace: "openshift-operators"
+    channel: "stable"
+    source: "redhat-operators"
+    sourceNamespace: "openshift-marketplace"
+    
+  grafana:
+    name: "grafana-operator"
+    namespace: "openshift-operators" 
+    channel: "v5"
+    source: "community-operators"
+    sourceNamespace: "openshift-marketplace"
+
+validation:
+  wait_timeout: 600
+  operator_timeout: 300
+  
+performance_testing:
+  redis_backfill_schedule: "0 0 * * *"
+  monitoring_annotation: "rhtas.redhat.com/metrics: 'true'"
+
+monitoring:
+  enabled: true
+  grafana:
+    instance_name: "tas-grafana"
+    admin_user: "admin"
+    admin_password: "admin"
+    route_name: "tas-grafana-route"
+    service_account: "grafana-reader"
+    token_duration: "720h"
+  
+  datasource:
+    name: "tas-prometheus"
+    prometheus_url: "https://prometheus-k8s.openshift-monitoring.svc.cluster.local:9091"
+    time_interval: "5s"
+    
+  dashboard:
+    name: "tas-performance-kpis"
+    title: "TAS Performance Dashboard - KPIs"
+    refresh_interval: "10s"
+    time_range: "15m"

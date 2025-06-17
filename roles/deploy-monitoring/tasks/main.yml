@@ -1,0 +1,154 @@
+# Deploy TAS Monitoring Stack (Grafana + Dashboards)
+---
+- name: "Starting TAS monitoring deployment"
+  debug:
+    msg:
+      - "Deploying TAS Monitoring Stack"
+      - "Namespace: {{ baseline_namespace }}"
+      - "Grafana instance: {{ monitoring.grafana.instance_name }}"
+      - "Dashboard: {{ monitoring.dashboard.name }}"
+
+# Step 2: Create ServiceAccount for Grafana
+- name: "Create Grafana ServiceAccount"
+  k8s:
+    definition: "{{ lookup('template', 'grafana-serviceaccount.yml.j2') | from_yaml }}"
+    wait: true
+
+- name: "Grant cluster monitoring view permissions"
+  k8s:
+    api_version: rbac.authorization.k8s.io/v1
+    kind: ClusterRoleBinding
+    name: "grafana-reader-{{ baseline_namespace }}"
+    definition:
+      metadata:
+        name: "grafana-reader-{{ baseline_namespace }}"
+      roleRef:
+        apiGroup: rbac.authorization.k8s.io
+        kind: ClusterRole
+        name: cluster-monitoring-view
+      subjects:
+        - kind: ServiceAccount
+          name: "{{ monitoring.grafana.service_account }}"
+          namespace: "{{ baseline_namespace }}"
+
+- name: "Create ServiceAccount token secret"
+  k8s:
+    api_version: v1
+    kind: Secret
+    name: "grafana-token-{{ ansible_date_time.epoch }}"
+    namespace: "{{ baseline_namespace }}"
+    definition:
+      metadata:
+        name: "grafana-token-{{ ansible_date_time.epoch }}"
+        namespace: "{{ baseline_namespace }}"
+        annotations:
+          kubernetes.io/service-account.name: "{{ monitoring.grafana.service_account }}"
+      type: kubernetes.io/service-account-token
+    wait: true
+    wait_timeout: 60
+  register: token_secret
+
+- name: "Wait for token to be populated in secret"
+  k8s_info:
+    api_version: v1
+    kind: Secret
+    name: "{{ token_secret.result.metadata.name }}"
+    namespace: "{{ baseline_namespace }}"
+  register: token_info
+  retries: 10
+  delay: 5
+  until: token_info.resources[0].data.token is defined
+
+- name: "Extract and set token variable"
+  set_fact:
+    grafana_token: "{{ token_info.resources[0].data.token | b64decode }}"
+
+# Step 4: Deploy Grafana instance
+- name: "Deploy Grafana instance"
+  k8s:
+    definition: "{{ lookup('template', 'grafana-instance.yml.j2') | from_yaml }}"
+    wait: true
+    wait_timeout: 300
+
+# Step 5: Deploy Prometheus datasource with token
+- name: "Deploy Prometheus datasource"
+  k8s:
+    definition: "{{ lookup('template', 'grafana-datasource.yml.j2') | from_yaml }}"
+    wait: true
+
+# Step 6: Deploy TAS performance dashboard
+- name: "Deploy TAS performance dashboard"
+  k8s:
+    definition: "{{ lookup('template', 'grafana-dashboard.yml.j2') | from_yaml }}"
+    wait: true
+
+# Step 7: Create Grafana route
+- name: "Create Grafana route"
+  k8s:
+    definition: "{{ lookup('template', 'grafana-route.yml.j2') | from_yaml }}"
+    wait: true
+
+# Step 8: Wait for Grafana deployment to be ready
+- name: "Wait for Grafana deployment to be ready"
+  k8s_info:
+    api_version: apps/v1
+    kind: Deployment
+    name: "{{ monitoring.grafana.instance_name }}-deployment"
+    namespace: "{{ baseline_namespace }}"
+    wait: true
+    wait_condition:
+      type: Available
+      status: "True"
+    wait_timeout: 300
+  register: grafana_deployment
+
+# Step 9: Get Grafana route URL
+- name: "Get Grafana route URL"
+  k8s_info:
+    api_version: route.openshift.io/v1
+    kind: Route
+    name: "{{ monitoring.grafana.route_name }}"
+    namespace: "{{ baseline_namespace }}"
+  register: grafana_route_info
+
+- name: "Set Grafana URL fact"
+  set_fact:
+    grafana_url: "https://{{ grafana_route_info.resources[0].spec.host }}"
+  when: grafana_route_info.resources | length > 0
+
+# Step 10: Verify monitoring components
+- name: "Verify Grafana components are ready"
+  k8s_info:
+    api_version: grafana.integreatly.org/v1beta1
+    kind: "{{ item.kind }}"
+    name: "{{ item.name }}"
+    namespace: "{{ baseline_namespace }}"
+  register: grafana_components
+  loop:
+    - { kind: "Grafana", name: "{{ monitoring.grafana.instance_name }}" }
+    - { kind: "GrafanaDatasource", name: "{{ monitoring.datasource.name }}" }
+    - { kind: "GrafanaDashboard", name: "{{ monitoring.dashboard.name }}" }
+  loop_control:
+    label: "{{ item.kind }}/{{ item.name }}"
+
+- name: "TAS monitoring deployment completed!"
+  debug:
+    msg:
+      - "TAS MONITORING DEPLOYED SUCCESSFULLY!"
+      - ""
+      - "Monitoring Stack Summary:"
+      - "   • Grafana Instance: {{ monitoring.grafana.instance_name }}"
+      - "   • Prometheus Datasource: {{ monitoring.datasource.name }}"
+      - "   • TAS Dashboard: {{ monitoring.dashboard.name }}"
+      - "   • Route: {{ monitoring.grafana.route_name }}"
+      - ""
+      - "Access Information:"
+      - "   • URL: {{ grafana_url | default('Route not ready yet') }}"
+      - "   • Username: {{ monitoring.grafana.admin_user }}"
+      - "   • Password: {{ monitoring.grafana.admin_password }}"
+      - ""
+      - "Security Reminders:"
+      - "   • Token expires in {{ monitoring.grafana.token_duration }}"
+      - "   • Change default admin password in production"
+      - ""
+      - "Your TAS infrastructure is now fully monitored!"

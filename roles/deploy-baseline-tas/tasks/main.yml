@@ -1,0 +1,267 @@
+# Deploy TAS Securesign with all monitoring enabled (Real Production Template)
+---
+- name: "Deploy baseline TAS Securesign instance"
+  k8s:
+    definition:
+      apiVersion: rhtas.redhat.com/v1alpha1
+      kind: Securesign
+      metadata:
+        name: "{{ baseline.instance_name }}"
+        namespace: "{{ baseline.namespace }}"
+        labels:
+          app.kubernetes.io/instance: "{{ baseline.instance_name }}"
+          app.kubernetes.io/name: "{{ baseline.instance_name }}"
+          app.kubernetes.io/part-of: trusted-artifact-signer
+        annotations:
+          rhtas.redhat.com/metrics: 'true'  # Important for monitoring
+      spec:
+        # CTLog Configuration
+        ctlog:
+          monitoring:
+            enabled: true
+          resources:
+            requests:
+              cpu: "{{ resources.ctlog.requests.cpu }}"
+              memory: "{{ resources.ctlog.requests.memory }}"
+            limits:
+              cpu: "{{ resources.ctlog.limits.cpu }}"
+              memory: "{{ resources.ctlog.limits.memory }}"
+            
+        # Fulcio Configuration (Certificate Authority)
+        fulcio:
+          certificate:
+            commonName: "{{ certificates.fulcio.common_name }}"
+            organizationEmail: "{{ certificates.organization_email }}"
+            organizationName: "{{ certificates.organization_name }}"
+          config:
+            OIDCIssuers:
+              - ClientID: "{{ oidc.client_id }}"
+                Issuer: "{{ oidc.issuer_url }}"
+                IssuerURL: "{{ oidc.issuer_url }}"
+                Type: "{{ oidc.type }}"
+          externalAccess:
+            enabled: true
+          monitoring:
+            enabled: true
+          resources:
+            requests:
+              cpu: "{{ resources.fulcio.requests.cpu }}"
+              memory: "{{ resources.fulcio.requests.memory }}"
+            limits:
+              cpu: "{{ resources.fulcio.limits.cpu }}"
+              memory: "{{ resources.fulcio.limits.memory }}"
+            
+        # Rekor Configuration (Transparency Log)
+        rekor:
+          monitoring:
+            enabled: true
+          externalAccess:
+            enabled: true
+          resources:
+            requests:
+              cpu: "{{ resources.rekor.requests.cpu }}"
+              memory: "{{ resources.rekor.requests.memory }}"
+            limits:
+              cpu: "{{ resources.rekor.limits.cpu }}"
+              memory: "{{ resources.rekor.limits.memory }}"
+            
+        # Trillian Configuration (Backend Database)
+        trillian:
+          database:
+            create: true
+          monitoring:
+            enabled: true
+          resources:
+            requests:
+              cpu: "{{ resources.trillian.requests.cpu }}"
+              memory: "{{ resources.trillian.requests.memory }}"
+            limits:
+              cpu: "{{ resources.trillian.limits.cpu }}"
+              memory: "{{ resources.trillian.limits.memory }}"
+            
+        # TSA Configuration (Timestamp Authority)
+        tsa:
+          externalAccess:
+            enabled: true
+          monitoring:
+            enabled: true
+          ntpMonitoring:
+            enabled: true
+          resources:
+            requests:
+              cpu: "{{ resources.tsa.requests.cpu }}"
+              memory: "{{ resources.tsa.requests.memory }}"
+            limits:
+              cpu: "{{ resources.tsa.limits.cpu }}"
+              memory: "{{ resources.tsa.limits.memory }}"
+          signer:
+            certificateChain:
+              intermediateCA:
+                - commonName: "{{ certificates.tsa.common_name }}"
+                  organizationEmail: "{{ certificates.organization_email }}"
+                  organizationName: "{{ certificates.organization_name }}"
+              leafCA:
+                commonName: "{{ certificates.tsa.common_name }}"
+                organizationEmail: "{{ certificates.organization_email }}"
+                organizationName: "{{ certificates.organization_name }}"
+              rootCA:
+                commonName: "{{ certificates.tsa.common_name }}"
+                organizationEmail: "{{ certificates.organization_email }}"
+                organizationName: "{{ certificates.organization_name }}"
+                
+        # TUF Configuration (The Update Framework)
+        tuf:
+          externalAccess:
+            enabled: true
+          keys:
+            - name: rekor.pub
+            - name: ctfe.pub
+            - name: fulcio_v1.crt.pem
+            - name: tsa.certchain.pem
+          pvc:
+            accessModes:
+              - ReadWriteOnce
+            retain: true
+            size: "{{ storage.tuf_size }}"
+          rootKeySecretRef:
+            name: tuf-root-keys
+    wait: false 
+
+- name: "Display TAS deployment status"
+  debug:
+    msg:
+      - "TAS Securesign deployment initiated"
+      - "Instance: {{ baseline.instance_name }}"
+      - "Namespace: {{ baseline_namespace }}"
+      - "Starting component readiness checks..."
+
+# Check each TAS component individually
+- name: "Check Trillian component readiness"
+  k8s_info:
+    api_version: rhtas.redhat.com/v1alpha1
+    kind: Trillian
+    name: "{{ baseline.instance_name }}"
+    namespace: "{{ baseline_namespace }}"
+  register: trillian_status
+  retries: 30
+  delay: 10
+  until: >
+    trillian_status.resources | length > 0 and
+    trillian_status.resources[0].status is defined and
+    trillian_status.resources[0].status.conditions is defined and
+    (trillian_status.resources[0].status.conditions | 
+     selectattr('type', 'equalto', 'Ready') | 
+     selectattr('status', 'equalto', 'True') | list | length > 0)
+
+- name: "Check Fulcio component readiness"
+  k8s_info:
+    api_version: rhtas.redhat.com/v1alpha1
+    kind: Fulcio
+    name: "{{ baseline.instance_name }}"
+    namespace: "{{ baseline_namespace }}"
+  register: fulcio_status
+  retries: 30
+  delay: 10
+  until: >
+    fulcio_status.resources | length > 0 and
+    fulcio_status.resources[0].status is defined and
+    fulcio_status.resources[0].status.conditions is defined and
+    (fulcio_status.resources[0].status.conditions | 
+     selectattr('type', 'equalto', 'Ready') | 
+     selectattr('status', 'equalto', 'True') | list | length > 0)
+
+- name: "Check Rekor component readiness"
+  k8s_info:
+    api_version: rhtas.redhat.com/v1alpha1
+    kind: Rekor
+    name: "{{ baseline.instance_name }}"
+    namespace: "{{ baseline_namespace }}"
+  register: rekor_status
+  retries: 30
+  delay: 10
+  until: >
+    rekor_status.resources | length > 0 and
+    rekor_status.resources[0].status is defined and
+    rekor_status.resources[0].status.conditions is defined and
+    (rekor_status.resources[0].status.conditions | 
+     selectattr('type', 'equalto', 'Ready') | 
+     selectattr('status', 'equalto', 'True') | list | length > 0)
+
+- name: "Check CTlog component readiness"
+  k8s_info:
+    api_version: rhtas.redhat.com/v1alpha1
+    kind: CTlog
+    name: "{{ baseline.instance_name }}"
+    namespace: "{{ baseline_namespace }}"
+  register: ctlog_status
+  retries: 30
+  delay: 10
+  until: >
+    ctlog_status.resources | length > 0 and
+    ctlog_status.resources[0].status is defined and
+    ctlog_status.resources[0].status.conditions is defined and
+    (ctlog_status.resources[0].status.conditions | 
+     selectattr('type', 'equalto', 'Ready') | 
+     selectattr('status', 'equalto', 'True') | list | length > 0)
+
+- name: "Check TimestampAuthority component readiness"
+  k8s_info:
+    api_version: rhtas.redhat.com/v1alpha1
+    kind: TimestampAuthority
+    name: "{{ baseline.instance_name }}"
+    namespace: "{{ baseline_namespace }}"
+  register: tsa_status
+  retries: 30
+  delay: 10
+  until: >
+    tsa_status.resources | length > 0 and
+    tsa_status.resources[0].status is defined and
+    tsa_status.resources[0].status.conditions is defined and
+    (tsa_status.resources[0].status.conditions | 
+     selectattr('type', 'equalto', 'Ready') | 
+     selectattr('status', 'equalto', 'True') | list | length > 0)
+
+- name: "Check Tuf component readiness"
+  k8s_info:
+    api_version: rhtas.redhat.com/v1alpha1
+    kind: Tuf
+    name: "{{ baseline.instance_name }}"
+    namespace: "{{ baseline_namespace }}"
+  register: tuf_status
+  retries: 30
+  delay: 10
+  until: >
+    tuf_status.resources | length > 0 and
+    tuf_status.resources[0].status is defined and
+    tuf_status.resources[0].status.conditions is defined and
+    (tuf_status.resources[0].status.conditions | 
+     selectattr('type', 'equalto', 'Ready') | 
+     selectattr('status', 'equalto', 'True') | list | length > 0)
+
+- name: "Check SecureSign component readiness"
+  k8s_info:
+    api_version: rhtas.redhat.com/v1alpha1
+    kind: Securesign
+    name: "{{ baseline.instance_name }}"
+    namespace: "{{ baseline_namespace }}"
+  register: securesign_status
+  retries: 30
+  delay: 10
+  until: >
+    securesign_status.resources | length > 0 and
+    securesign_status.resources[0].status is defined and
+    securesign_status.resources[0].status.conditions is defined and
+    (securesign_status.resources[0].status.conditions | 
+     selectattr('type', 'equalto', 'Ready') | 
+     selectattr('status', 'equalto', 'True') | list | length > 0)
+
+
+- name: "Verify ServiceMonitors are created"
+  k8s_info:
+    api_version: monitoring.coreos.com/v1
+    kind: ServiceMonitor
+    namespace: "{{ baseline_namespace }}"
+  register: service_monitors
+  retries: 5
+  delay: 30
+  until: service_monitors.resources | length >= 6  # Expect at least 6 ServiceMonitors

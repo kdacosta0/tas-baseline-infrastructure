@@ -1,0 +1,18 @@
+# Create and configure baseline namespace
+---
+- name: "Create baseline namespace"
+  k8s:
+    name: "{{ baseline_namespace }}"
+    api_version: v1
+    kind: Namespace
+    state: present
+    definition:
+      metadata:
+        labels:
+          openshift.io/cluster-monitoring: "true"  # Enable monitoring
+          purpose: "baseline-infrastructure"
+          managed-by: "ansible"
+
+- name: "Namespace ready for TAS deployment"
+  debug:
+    msg: "Namespace {{ baseline_namespace }} created with monitoring enabled"

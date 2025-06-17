@@ -1,0 +1,12 @@
+apiVersion: grafana.integreatly.org/v1beta1
+kind: Grafana
+metadata:
+  name: {{ monitoring.grafana.instance_name }}
+  namespace: {{ baseline_namespace }}
+  labels:
+    dashboards: {{ monitoring.grafana.instance_name }}
+spec:
+  config:
+    security:
+      admin_user: {{ monitoring.grafana.admin_user }}
+      admin_password: {{ monitoring.grafana.admin_password }}

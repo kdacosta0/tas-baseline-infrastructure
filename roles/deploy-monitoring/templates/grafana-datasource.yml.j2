@@ -1,0 +1,22 @@
+apiVersion: grafana.integreatly.org/v1beta1
+kind: GrafanaDatasource
+metadata:
+  name: {{ monitoring.datasource.name }}
+  namespace: {{ baseline_namespace }}
+spec:
+  instanceSelector:
+    matchLabels:
+      dashboards: {{ monitoring.grafana.instance_name }}
+  datasource:
+    name: prometheus
+    type: prometheus
+    access: proxy
+    url: {{ monitoring.datasource.prometheus_url }}
+    basicAuth: false
+    isDefault: true
+    jsonData:
+      timeInterval: "{{ monitoring.datasource.time_interval }}"
+      tlsSkipVerify: true
+      httpHeaderName1: "Authorization"
+    secureJsonData:
+      httpHeaderValue1: "Bearer {{ grafana_token }}"
