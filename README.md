@@ -38,7 +38,7 @@ The infrastructure includes the following main components:
 
 1. Clone the repository:
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/kdacosta0/tas-baseline-infrastructure.git
    cd tas-baseline-infrastructure
    ```
 
@@ -54,13 +54,12 @@ The infrastructure includes the following main components:
 - `make cleanup-apps` - Remove only TAS applications (keep operators)
 - `make check` - Verify prerequisites
 - `make status` - Show deployment status
-- `make logs` - Show recent logs
 
 ## Configuration
 
 The infrastructure can be configured through `baseline-config.yml`. Key configuration areas include:
 
-- OIDC settings
+- OIDC settings (required)
 - Certificate configurations
 - Resource limits and requests
 - Component enablement
@@ -96,4 +95,4 @@ The monitoring stack includes:
 
 ## License
 
-This project is licensed under the terms included in the LICENSE file.
+This project is licensed under the terms included in the [LICENSE](LICENSE) file.
