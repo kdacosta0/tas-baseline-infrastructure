@@ -27,22 +27,22 @@
         deployment_user: "{{ ansible_user_id }}"
 
   tasks:
-    - name: "Step 1: Install required operators"
+    - name: "Install required operators"
       include_role:
         name: install-operators
       tags: ["operators", "setup"]
         
-    - name: "Step 2: Setup baseline namespace"
+    - name: "Setup baseline namespace"
       include_role:
         name: setup-baseline-namespace
       tags: ["namespace", "setup"]
 
-    - name: "Step 3: Deploy baseline TAS instance"
+    - name: "Deploy baseline TAS instance"
       include_role:
         name: deploy-baseline-tas
       tags: ["tas", "deploy"]
 
-    - name: "Step 4: Deploy monitoring stack"
+    - name: "Deploy monitoring stack"
       include_role:
         name: deploy-monitoring
       when: monitoring.enabled | default(true)

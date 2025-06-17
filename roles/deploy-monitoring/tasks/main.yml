@@ -8,7 +8,6 @@
       - "Grafana instance: {{ monitoring.grafana.instance_name }}"
       - "Dashboard: {{ monitoring.dashboard.name }}"
 
-# Step 2: Create ServiceAccount for Grafana
 - name: "Create Grafana ServiceAccount"
   k8s:
     definition: "{{ lookup('template', 'grafana-serviceaccount.yml.j2') | from_yaml }}"
@@ -47,6 +46,7 @@
     wait: true
     wait_timeout: 60
   register: token_secret
+  no_log: true
 
 - name: "Wait for token to be populated in secret"
   k8s_info:
@@ -58,37 +58,36 @@
   retries: 10
   delay: 5
   until: token_info.resources[0].data.token is defined
+  no_log: true
 
 - name: "Extract and set token variable"
   set_fact:
     grafana_token: "{{ token_info.resources[0].data.token | b64decode }}"
+  no_log: true
 
-# Step 4: Deploy Grafana instance
 - name: "Deploy Grafana instance"
   k8s:
     definition: "{{ lookup('template', 'grafana-instance.yml.j2') | from_yaml }}"
     wait: true
     wait_timeout: 300
+  no_log: true
 
-# Step 5: Deploy Prometheus datasource with token
 - name: "Deploy Prometheus datasource"
   k8s:
     definition: "{{ lookup('template', 'grafana-datasource.yml.j2') | from_yaml }}"
     wait: true
+  no_log: true
 
-# Step 6: Deploy TAS performance dashboard
 - name: "Deploy TAS performance dashboard"
   k8s:
     definition: "{{ lookup('template', 'grafana-dashboard.yml.j2') | from_yaml }}"
     wait: true
 
-# Step 7: Create Grafana route
 - name: "Create Grafana route"
   k8s:
     definition: "{{ lookup('template', 'grafana-route.yml.j2') | from_yaml }}"
     wait: true
 
-# Step 8: Wait for Grafana deployment to be ready
 - name: "Wait for Grafana deployment to be ready"
   k8s_info:
     api_version: apps/v1
@@ -102,7 +101,6 @@
     wait_timeout: 300
   register: grafana_deployment
 
-# Step 9: Get Grafana route URL
 - name: "Get Grafana route URL"
   k8s_info:
     api_version: route.openshift.io/v1
@@ -110,13 +108,14 @@
     name: "{{ monitoring.grafana.route_name }}"
     namespace: "{{ baseline_namespace }}"
   register: grafana_route_info
+  no_log: true
 
 - name: "Set Grafana URL fact"
   set_fact:
     grafana_url: "https://{{ grafana_route_info.resources[0].spec.host }}"
   when: grafana_route_info.resources | length > 0
+  no_log: true
 
-# Step 10: Verify monitoring components
 - name: "Verify Grafana components are ready"
   k8s_info:
     api_version: grafana.integreatly.org/v1beta1
@@ -130,12 +129,11 @@
     - { kind: "GrafanaDashboard", name: "{{ monitoring.dashboard.name }}" }
   loop_control:
     label: "{{ item.kind }}/{{ item.name }}"
+  no_log: true
 
 - name: "TAS monitoring deployment completed!"
   debug:
     msg:
-      - "TAS MONITORING DEPLOYED SUCCESSFULLY!"
-      - ""
       - "Monitoring Stack Summary:"
       - "   • Grafana Instance: {{ monitoring.grafana.instance_name }}"
       - "   • Prometheus Datasource: {{ monitoring.datasource.name }}"
@@ -147,8 +145,3 @@
       - "   • Username: {{ monitoring.grafana.admin_user }}"
       - "   • Password: {{ monitoring.grafana.admin_password }}"
       - ""
-      - "Security Reminders:"
-      - "   • Token expires in {{ monitoring.grafana.token_duration }}"
-      - "   • Change default admin password in production"
-      - ""
-      - "Your TAS infrastructure is now fully monitored!"

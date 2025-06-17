@@ -1,6 +1,4 @@
 #!/bin/bash
-# deploy-baseline.sh - TAS Baseline Infrastructure Deployment
-# 🎯 Creates standardized TAS infrastructure ready for performance testing
 
 set -euo pipefail
 
@@ -19,9 +17,6 @@ echo -e "${BLUE}========================================${NC}"
 echo -e "${BLUE}TAS Baseline Infrastructure Setup${NC}"
 echo -e "${BLUE}========================================${NC}"
 echo ""
-
-# Check prerequisites
-echo -e "${BLUE}Checking prerequisites...${NC}"
 
 # Check OpenShift connection
 if oc whoami &> /dev/null; then
