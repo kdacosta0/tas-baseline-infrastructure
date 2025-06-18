@@ -33,6 +33,7 @@ cleanup:
 	@echo "Cleaning up TAS resources and operators..."
 	@echo " Removing application namespaces..."
 	oc delete namespace tas-monitoring --ignore-not-found=true
+	oc delete namespace trusted-artifact-signer --ignore-not-found=true
 	@echo " Removing RHTAS operator..."
 	oc delete subscription rhtas-operator -n openshift-operators --ignore-not-found=true
 	oc delete csv -n openshift-operators -l operators.coreos.com/rhtas-operator.openshift-operators --ignore-not-found=true

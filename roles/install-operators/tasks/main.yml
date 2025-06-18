@@ -14,8 +14,6 @@
         name: "{{ operators.rhtas.name }}"
         source: "{{ operators.rhtas.source }}"
         sourceNamespace: "{{ operators.rhtas.sourceNamespace }}"
-    wait: true
-    wait_timeout: "{{ validation.operator_timeout }}"
 
 - name: "Install Grafana Operator"  
   k8s:
@@ -31,8 +29,6 @@
         name: "{{ operators.grafana.name }}"
         source: "{{ operators.grafana.source }}"
         sourceNamespace: "{{ operators.grafana.sourceNamespace }}"
-    wait: true
-    wait_timeout: "{{ validation.operator_timeout }}"
 
 - name: "Wait for RHTAS Operator to be ready"
   k8s_info:

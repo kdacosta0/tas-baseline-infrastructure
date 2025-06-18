@@ -22,34 +22,37 @@ certificates:
     common_name: "tsa.hostname"
 
 storage:
-  rekor_size: "5Gi"
-  trillian_db_size: "5Gi"
   tuf_size: "100Mi"
 
-# Standardized resource limits for performance testing 
-# TO-DO: adjust as needed after performance testing
 resources:
-  fulcio:
+  trillian_logserver:
     requests:
-      cpu: "500m"
-      memory: "512Mi"
+      cpu: "750m"
+      memory: "768Mi"
     limits:
-      cpu: "1000m"
+      cpu: "1500m"
+      memory: "1.5Gi"
+  trillian_logsigner:
+    requests:
+      cpu: "250m"
+      memory: "256Mi"
+    limits:
+      cpu: "1500m"
       memory: "1Gi"
   rekor:
     requests:
       cpu: "500m"
       memory: "512Mi"
     limits:
-      cpu: "1000m"
+      cpu: "1500m"
       memory: "1Gi"
-  trillian:
+  fulcio:
     requests:
       cpu: "500m"
-      memory: "1Gi"
+      memory: "512Mi"
     limits:
-      cpu: "1000m"
-      memory: "2Gi"
+      cpu: "1500m"
+      memory: "1Gi"
   ctlog:
     requests:
       cpu: "200m"
@@ -67,13 +70,11 @@ resources:
 
 components:
   fulcio:
-    enabled: true
     monitoring_enabled: true
     external_access: true
     description: "Certificate Authority - issues signing certificates"
     
   rekor:
-    enabled: true
     monitoring_enabled: true
     external_access: true
     search_ui_enabled: true
@@ -81,25 +82,21 @@ components:
     description: "Transparency Log - records all signatures"
     
   trillian:
-    enabled: true
     monitoring_enabled: true
     database_create: true
     description: "Backend Database - stores transparency log data"
     
   ctlog:
-    enabled: true
     monitoring_enabled: true
     description: "Certificate Transparency Log"
     
   tsa:
-    enabled: true
     monitoring_enabled: true
     ntp_monitoring_enabled: true
     external_access: true
     description: "Timestamp Authority - provides cryptographic timestamps"
     
   tuf:
-    enabled: true
     external_access: true
     description: "The Update Framework - distributes public keys"
 
@@ -117,14 +114,6 @@ operators:
     channel: "v5"
     source: "community-operators"
     sourceNamespace: "openshift-marketplace"
-
-validation:
-  wait_timeout: 600
-  operator_timeout: 300
-  
-performance_testing:
-  redis_backfill_schedule: "0 0 * * *"
-  monitoring_annotation: "rhtas.redhat.com/metrics: 'true'"
 
 monitoring:
   enabled: true
