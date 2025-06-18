@@ -41,9 +41,8 @@ ansible-galaxy collection install kubernetes.core --force-with-deps
 echo ""
 echo -e "${BLUE}Starting baseline infrastructure deployment...${NC}"
 ansible-playbook -i inventory.yml setup-baseline.yml \
-    -e baseline_namespace="$BASELINE_NAMESPACE" \
-    -v
-
+    -e baseline_namespace="$BASELINE_NAMESPACE" 
+    
 # Final status
 echo ""
 echo -e "${GREEN}Baseline infrastructure deployment completed!${NC}"

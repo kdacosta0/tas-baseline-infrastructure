@@ -1,126 +1,10 @@
 # Deploy TAS Securesign with all monitoring enabled (Real Production Template)
+# roles/tas_deploy/tasks/main.yml
 ---
 - name: "Deploy baseline TAS Securesign instance"
   k8s:
-    definition:
-      apiVersion: rhtas.redhat.com/v1alpha1
-      kind: Securesign
-      metadata:
-        name: "{{ baseline.instance_name }}"
-        namespace: "{{ baseline.namespace }}"
-        labels:
-          app.kubernetes.io/instance: "{{ baseline.instance_name }}"
-          app.kubernetes.io/name: "{{ baseline.instance_name }}"
-          app.kubernetes.io/part-of: tas-monitoring
-        annotations:
-          rhtas.redhat.com/metrics: 'true'
-      spec:
-        ctlog:
-          monitoring:
-            enabled: true
-          resources:
-            requests:
-              cpu: "{{ resources.ctlog.requests.cpu }}"
-              memory: "{{ resources.ctlog.requests.memory }}"
-            limits:
-              cpu: "{{ resources.ctlog.limits.cpu }}"
-              memory: "{{ resources.ctlog.limits.memory }}"
-            
-        fulcio:
-          certificate:
-            commonName: "{{ certificates.fulcio.common_name }}"
-            organizationEmail: "{{ certificates.organization_email }}"
-            organizationName: "{{ certificates.organization_name }}"
-          config:
-            OIDCIssuers:
-              - ClientID: "{{ oidc.client_id }}"
-                Issuer: "{{ oidc.issuer_url }}"
-                IssuerURL: "{{ oidc.issuer_url }}"
-                Type: "{{ oidc.type }}"
-          externalAccess:
-            enabled: true
-          monitoring:
-            enabled: true
-          resources:
-            requests:
-              cpu: "{{ resources.fulcio.requests.cpu }}"
-              memory: "{{ resources.fulcio.requests.memory }}"
-            limits:
-              cpu: "{{ resources.fulcio.limits.cpu }}"
-              memory: "{{ resources.fulcio.limits.memory }}"
-            
-        rekor:
-          monitoring:
-            enabled: true
-          externalAccess:
-            enabled: true
-          resources:
-            requests:
-              cpu: "{{ resources.rekor.requests.cpu }}"
-              memory: "{{ resources.rekor.requests.memory }}"
-            limits:
-              cpu: "{{ resources.rekor.limits.cpu }}"
-              memory: "{{ resources.rekor.limits.memory }}"
-            
-        trillian:
-          database:
-            create: true
-          monitoring:
-            enabled: true
-          resources:
-            requests:
-              cpu: "{{ resources.trillian.requests.cpu }}"
-              memory: "{{ resources.trillian.requests.memory }}"
-            limits:
-              cpu: "{{ resources.trillian.limits.cpu }}"
-              memory: "{{ resources.trillian.limits.memory }}"
-            
-        tsa:
-          externalAccess:
-            enabled: true
-          monitoring:
-            enabled: true
-          ntpMonitoring:
-            enabled: true
-          resources:
-            requests:
-              cpu: "{{ resources.tsa.requests.cpu }}"
-              memory: "{{ resources.tsa.requests.memory }}"
-            limits:
-              cpu: "{{ resources.tsa.limits.cpu }}"
-              memory: "{{ resources.tsa.limits.memory }}"
-          signer:
-            certificateChain:
-              intermediateCA:
-                - commonName: "{{ certificates.tsa.common_name }}"
-                  organizationEmail: "{{ certificates.organization_email }}"
-                  organizationName: "{{ certificates.organization_name }}"
-              leafCA:
-                commonName: "{{ certificates.tsa.common_name }}"
-                organizationEmail: "{{ certificates.organization_email }}"
-                organizationName: "{{ certificates.organization_name }}"
-              rootCA:
-                commonName: "{{ certificates.tsa.common_name }}"
-                organizationEmail: "{{ certificates.organization_email }}"
-                organizationName: "{{ certificates.organization_name }}"
-                
-        tuf:
-          externalAccess:
-            enabled: true
-          keys:
-            - name: rekor.pub
-            - name: ctfe.pub
-            - name: fulcio_v1.crt.pem
-            - name: tsa.certchain.pem
-          pvc:
-            accessModes:
-              - ReadWriteOnce
-            retain: true
-            size: "{{ storage.tuf_size }}"
-          rootKeySecretRef:
-            name: tuf-root-keys
-    wait: false 
-  no_log: true 
+    state: present
+    definition: "{{ lookup('template', 'securesign-cr.yml.j2') }}"
 
 - name: "Display TAS deployment status"
   debug:
@@ -248,7 +132,132 @@
     (securesign_status.resources[0].status.conditions | 
      selectattr('type', 'equalto', 'Ready') | 
      selectattr('status', 'equalto', 'True') | list | length > 0)
-  no_log: true
+
+- name: "Apply resource requests and limits to Fulcio Deployment"
+  k8s:
+    state: present
+    kind: Deployment
+    name: fulcio-server
+    namespace: "{{ baseline.namespace }}"
+    definition:
+      spec:
+        template:
+          spec:
+            containers:
+              - name: fulcio-server
+                resources:
+                  requests:
+                    cpu: "{{ resources.fulcio.requests.cpu }}"
+                    memory: "{{ resources.fulcio.requests.memory }}"
+                  limits:
+                    cpu: "{{ resources.fulcio.limits.cpu }}"
+                    memory: "{{ resources.fulcio.limits.memory }}"
+    merge_type: strategic-merge
+
+- name: "Apply resource requests and limits to Rekor Deployment"
+  k8s:
+    state: present
+    kind: Deployment
+    name: rekor-server
+    namespace: "{{ baseline.namespace }}"
+    definition:
+      spec:
+        template:
+          spec:
+            containers:
+              - name: rekor-server
+                resources:
+                  requests:
+                    cpu: "{{ resources.rekor.requests.cpu }}"
+                    memory: "{{ resources.rekor.requests.memory }}"
+                  limits:
+                    cpu: "{{ resources.rekor.limits.cpu }}"
+                    memory: "{{ resources.rekor.limits.memory }}"
+    merge_type: strategic-merge
+
+- name: "Apply resource requests and limits to Trillian Log Server Deployment"
+  k8s:
+    state: present
+    kind: Deployment
+    name: trillian-logserver
+    namespace: "{{ baseline.namespace }}"
+    definition:
+      spec:
+        template:
+          spec:
+            containers:
+              - name: trillian-logserver
+                resources:
+                  requests:
+                    cpu: "{{ resources.trillian_logserver.requests.cpu }}"
+                    memory: "{{ resources.trillian_logserver.requests.memory }}"
+                  limits:
+                    cpu: "{{ resources.trillian_logserver.limits.cpu }}"
+                    memory: "{{ resources.trillian_logserver.limits.memory }}"
+    merge_type: strategic-merge
+
+- name: "Apply resource requests and limits to Trillian Log Signer Deployment"
+  k8s:
+    state: present
+    kind: Deployment
+    name: trillian-logsigner
+    namespace: "{{ baseline.namespace }}"
+    definition:
+      spec:
+        template:
+          spec:
+            containers:
+              - name: trillian-logsigner
+                resources:
+                  requests:
+                    cpu: "{{ resources.trillian_logsigner.requests.cpu }}"
+                    memory: "{{ resources.trillian_logsigner.requests.memory }}"
+                  limits:
+                    cpu: "{{ resources.trillian_logsigner.limits.cpu }}"
+                    memory: "{{ resources.trillian_logsigner.limits.memory }}"
+    merge_type: strategic-merge
+
+- name: "Apply resource requests and limits to CTLog Deployment"
+  k8s:
+    state: present
+    kind: Deployment
+    name: ctlog
+    namespace: "{{ baseline.namespace }}"
+    definition:
+      spec:
+        template:
+          spec:
+            containers:
+              - name: ctlog
+                resources:
+                  requests:
+                    cpu: "{{ resources.ctlog.requests.cpu }}"
+                    memory: "{{ resources.ctlog.requests.memory }}"
+                  limits:
+                    cpu: "{{ resources.ctlog.limits.cpu }}"
+                    memory: "{{ resources.ctlog.limits.memory }}"
+    merge_type: strategic-merge
+
+- name: "Apply resource requests and limits to TSA Deployment"
+  k8s:
+    state: present
+    kind: Deployment
+    name: tsa-server
+    namespace: "{{ baseline.namespace }}"
+    definition:
+      spec:
+        template:
+          spec:
+            containers:
+              - name: tsa-server
+                resources:
+                  requests:
+                    cpu: "{{ resources.tsa.requests.cpu }}"
+                    memory: "{{ resources.tsa.requests.memory }}"
+                  limits:
+                    cpu: "{{ resources.tsa.limits.cpu }}"
+                    memory: "{{ resources.tsa.limits.memory }}"
+    merge_type: strategic-merge
 
 - name: "Verify ServiceMonitors are created"
   k8s_info:
@@ -259,4 +268,3 @@
   retries: 5
   delay: 30
   until: service_monitors.resources | length >= 6  # Expect at least 6 ServiceMonitors
-  no_log: true

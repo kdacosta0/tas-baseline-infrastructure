@@ -1,0 +1,81 @@
+apiVersion: rhtas.redhat.com/v1alpha1
+kind: Securesign
+metadata:
+  name: "{{ baseline.instance_name }}"
+  namespace: "{{ baseline.namespace }}"
+  labels:
+    app.kubernetes.io/instance: "{{ baseline.instance_name }}"
+    app.kubernetes.io/name: "{{ baseline.instance_name }}"
+    app.kubernetes.io/part-of: "tas-monitoring"
+  annotations:
+    rhtas.redhat.com/metrics: 'true'
+spec:
+  ctlog:
+    monitoring:
+      enabled: {{ components.ctlog.monitoring_enabled }}
+
+  fulcio:
+    externalAccess:
+      enabled: {{ components.fulcio.external_access }}
+    monitoring:
+      enabled: {{ components.fulcio.monitoring_enabled }}
+    config:
+      OIDCIssuers:
+      - ClientID: "{{ oidc.client_id }}"
+        Issuer: "{{ oidc.issuer_url }}"
+        IssuerURL: "{{ oidc.issuer_url }}"
+        Type: "{{ oidc.type }}"
+    certificate:
+      commonName: "{{ certificates.fulcio.common_name }}"
+      organizationEmail: "{{ certificates.organization_email }}"
+      organizationName: "{{ certificates.organization_name }}"
+
+  rekor:
+    externalAccess:
+      enabled: {{ components.rekor.external_access }}
+    monitoring:
+      enabled: {{ components.rekor.monitoring_enabled }}
+
+  trillian:
+    monitoring:
+      enabled: {{ components.trillian.monitoring_enabled }}
+    database:
+      create: {{ components.trillian.database_create }}
+
+  tsa:
+    externalAccess:
+      enabled: {{ components.tsa.external_access }}
+    monitoring:
+      enabled: {{ components.tsa.monitoring_enabled }}
+    ntpMonitoring:
+      enabled: {{ components.tsa.ntp_monitoring_enabled }}
+    signer:
+      certificateChain:
+        intermediateCA:
+          - commonName: "{{ certificates.tsa.common_name }}"
+            organizationEmail: "{{ certificates.organization_email }}"
+            organizationName: "{{ certificates.organization_name }}"
+        leafCA:
+          commonName: "{{ certificates.tsa.common_name }}"
+          organizationEmail: "{{ certificates.organization_email }}"
+          organizationName: "{{ certificates.organization_name }}"
+        rootCA:
+          commonName: "{{ certificates.tsa.common_name }}"
+          organizationEmail: "{{ certificates.organization_email }}"
+          organizationName: "{{ certificates.organization_name }}"
+
+  tuf:
+    externalAccess:
+      enabled: {{ components.tuf.external_access }}
+    keys:
+      - name: rekor.pub
+      - name: ctfe.pub
+      - name: fulcio_v1.crt.pem
+      - name: tsa.certchain.pem
+    pvc:
+      accessModes:
+        - ReadWriteOnce
+      retain: {{ storage.tuf_retain | default(true) }}
+      size: "{{ storage.tuf_size }}"
+    rootKeySecretRef:
+      name: "{{ tuf.root_key_secret_name | default('tuf-root-keys') }}"

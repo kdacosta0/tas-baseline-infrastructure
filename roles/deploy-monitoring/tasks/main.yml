@@ -70,23 +70,19 @@
     definition: "{{ lookup('template', 'grafana-instance.yml.j2') | from_yaml }}"
     wait: true
     wait_timeout: 300
-  no_log: true
 
 - name: "Deploy Prometheus datasource"
   k8s:
     definition: "{{ lookup('template', 'grafana-datasource.yml.j2') | from_yaml }}"
     wait: true
-  no_log: true
 
 - name: "Deploy TAS performance dashboard"
   k8s:
     definition: "{{ lookup('template', 'grafana-dashboard.yml.j2') | from_yaml }}"
-    wait: true
 
 - name: "Create Grafana route"
   k8s:
     definition: "{{ lookup('template', 'grafana-route.yml.j2') | from_yaml }}"
-    wait: true
 
 - name: "Wait for Grafana deployment to be ready"
   k8s_info:
@@ -108,13 +104,11 @@
     name: "{{ monitoring.grafana.route_name }}"
     namespace: "{{ baseline_namespace }}"
   register: grafana_route_info
-  no_log: true
 
 - name: "Set Grafana URL fact"
   set_fact:
     grafana_url: "https://{{ grafana_route_info.resources[0].spec.host }}"
   when: grafana_route_info.resources | length > 0
-  no_log: true
 
 - name: "Verify Grafana components are ready"
   k8s_info:
@@ -129,7 +123,6 @@
     - { kind: "GrafanaDashboard", name: "{{ monitoring.dashboard.name }}" }
   loop_control:
     label: "{{ item.kind }}/{{ item.name }}"
-  no_log: true
 
 - name: "TAS monitoring deployment completed!"
   debug:

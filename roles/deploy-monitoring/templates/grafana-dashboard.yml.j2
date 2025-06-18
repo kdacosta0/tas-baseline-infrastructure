@@ -154,32 +154,32 @@ spec:
         },
         {
           "id": 3,
-          "title": "CPU Usage % by Component",
+          "title": "CPU Usage by Component (mCPU)",
           "type": "timeseries",
-          "description": "CPU utilization per TAS component",
+          "description": "CPU utilization per TAS component in millicores",
           "targets": [
             {
-              "expr": "sum by (job)(rate(process_cpu_seconds_total{namespace=\"{{ baseline_namespace }}\"}[2m])) * 100",
+              "expr": "sum by (job)(rate(process_cpu_seconds_total{namespace=\"{{ baseline_namespace }}\"}[2m])) * 1000",
               "refId": "A",
               "legendFormat": "{% raw %}{{job}}{% endraw %}"
             }
           ],
           "fieldConfig": {
             "defaults": {
-              "unit": "percent",
+              "unit": "mCPU",
               "min": 0,
               "custom": {
                 "drawStyle": "line",
                 "lineWidth": 3,
                 "fillOpacity": 20,
-                "axisLabel": "CPU Percentage"
+                "axisLabel": "millicores"
               },
               "thresholds": {
                 "mode": "absolute",
                 "steps": [
                   {"color": "green", "value": null},
-                  {"color": "yellow", "value": 50},
-                  {"color": "red", "value": 80}
+                  {"color": "yellow", "value": 500},
+                  {"color": "red", "value": 800}
                 ]
               }
             }
@@ -196,7 +196,7 @@ spec:
         },
         {
           "id": 4,
-          "title": "Memory Usage MB by Component",
+          "title": "Memory Usage by Component (MB)",
           "type": "timeseries", 
           "description": "Actual memory consumption in MB",
           "targets": [
@@ -220,8 +220,8 @@ spec:
                 "mode": "absolute",
                 "steps": [
                   {"color": "green", "value": null},
-                  {"color": "yellow", "value": 512},
-                  {"color": "red", "value": 1024}
+                  {"color": "yellow", "value": 800},
+                  {"color": "red", "value": 1500}
                 ]
               }
             }
@@ -243,22 +243,22 @@ spec:
           "description": "Total CPU usage across all TAS components",
           "targets": [
             {
-              "expr": "sum(rate(process_cpu_seconds_total{namespace=\"{{ baseline_namespace }}\"}[2m])) * 100",
+              "expr": "sum(rate(process_cpu_seconds_total{namespace=\"{{ baseline_namespace }}\"}[2m])) * 1000",
               "refId": "A",
-              "legendFormat": "Total CPU %"
+              "legendFormat": "Total mCPU"
             }
           ],
           "fieldConfig": {
             "defaults": {
-              "unit": "percent",
+              "unit": "mCPU",
               "min": 0,
-              "max": 200,
+              "max": 7000,
               "thresholds": {
                 "mode": "absolute",
                 "steps": [
                   {"color": "green", "value": null},
-                  {"color": "yellow", "value": 100},
-                  {"color": "red", "value": 150}
+                  {"color": "yellow", "value": 4900},
+                  {"color": "red", "value": 6300}
                 ]
               }
             }
@@ -281,13 +281,13 @@ spec:
             "defaults": {
               "unit": "mbytes",
               "min": 0,
-              "max": 1024,
+              "max": 5632,
               "thresholds": {
                 "mode": "absolute",
                 "steps": [
                   {"color": "green", "value": null},
-                  {"color": "yellow", "value": 700},
-                  {"color": "red", "value": 900}
+                  {"color": "yellow", "value": 3942},
+                  {"color": "red", "value": 5069}
                 ]
               }
             }
@@ -393,8 +393,8 @@ spec:
                 "mode": "absolute",
                 "steps": [
                   {"color": "red", "value": null},
-                  {"color": "yellow", "value": 3},
-                  {"color": "green", "value": 5}
+                  {"color": "yellow", "value": 5},
+                  {"color": "green", "value": 6}
                 ]
               }
             }
