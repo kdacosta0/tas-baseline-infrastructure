@@ -42,7 +42,13 @@ The infrastructure includes the following main components:
    cd tas-baseline-infrastructure
    ```
 
-2. Deploy the infrastructure:
+2. Configure OIDC, in the [baseline-config.yml](baseline-config.yml) file:
+   ```bash
+   oidc:
+      issuer_url: "https://your-oidc-issuer-url"
+   ```
+
+3. Deploy the infrastructure:
    ```bash
    make deploy
    ```
