@@ -29,8 +29,8 @@ fi
 
 # Check/install Ansible
 if ! command -v ansible-playbook &> /dev/null; then
-    echo -e "${YELLOW}Installing Ansible...${NC}"
-    pip3 install ansible
+    echo -e "${YELLOW}Installing Ansible and Python dependencies for Ansible k8s module${NC}"
+    pip3 install ansible kubernetes PyYAML
 fi
 
 # Install Kubernetes collection
