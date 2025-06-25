@@ -91,6 +91,7 @@ spec:
           },
           "gridPos": {"h": 10, "w": 24, "x": 0, "y": 0}
         },
+
         {
           "id": 2,
           "title": "API & System Throughput (ops/s)",
@@ -150,8 +151,9 @@ spec:
               "showLegend": true
             }
           },
-          "gridPos": {"h": 16, "w": 24, "x": 0, "y": 10}
+          "gridPos": {"h": 14, "w": 24, "x": 0, "y": 10}
         },
+
         {
           "id": 3,
           "title": "CPU Usage by Component (mCPU)",
@@ -159,7 +161,7 @@ spec:
           "description": "CPU utilization per TAS component in millicores",
           "targets": [
             {
-              "expr": "sum by (job)(rate(process_cpu_seconds_total{namespace=\"{{ baseline_namespace }}\"}[2m])) * 1000",
+              "expr": "sum by (job)(rate(process_cpu_seconds_total{namespace=\"{{ baseline_namespace }}\", job!=\"trillian-db-exporter-metrics\"}[2m])) * 1000",
               "refId": "A",
               "legendFormat": "{% raw %}{{job}}{% endraw %}"
             }
@@ -192,8 +194,9 @@ spec:
               "calcs": ["max", "mean", "lastNotNull"]
             }
           },
-          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 26}
+          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 24}
         },
+
         {
           "id": 4,
           "title": "Memory Usage by Component (MB)",
@@ -201,7 +204,7 @@ spec:
           "description": "Actual memory consumption in MB",
           "targets": [
             {
-              "expr": "sum by (job)(process_resident_memory_bytes{namespace=\"{{ baseline_namespace }}\"}) / 1024 / 1024",
+              "expr": "sum by (job)(process_resident_memory_bytes{namespace=\"{{ baseline_namespace }}\", job!=\"trillian-db-exporter-metrics\"}) / 1024 / 1024",
               "refId": "A",
               "legendFormat": "{% raw %}{{job}}{% endraw %}"
             }
@@ -234,16 +237,17 @@ spec:
               "calcs": ["min", "max", "mean", "lastNotNull"]
             }
           },
-          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 26}
+          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 24}
         },
+
         {
           "id": 5,
           "title": "Overall CPU Usage",
           "type": "gauge",
-          "description": "Total CPU usage across all TAS components",
+          "description": "Total CPU usage across all TAS components compared to the sum of all container limits.",
           "targets": [
             {
-              "expr": "sum(rate(process_cpu_seconds_total{namespace=\"{{ baseline_namespace }}\"}[2m])) * 1000",
+              "expr": "sum(rate(process_cpu_seconds_total{namespace=\"{{ baseline_namespace }}\", job!=\"trillian-db-exporter-metrics\"}[2m])) * 1000",
               "refId": "A",
               "legendFormat": "Total mCPU"
             }
@@ -252,27 +256,28 @@ spec:
             "defaults": {
               "unit": "mCPU",
               "min": 0,
-              "max": 7000,
+              "max": 11000,
               "thresholds": {
                 "mode": "absolute",
                 "steps": [
                   {"color": "green", "value": null},
-                  {"color": "yellow", "value": 4900},
-                  {"color": "red", "value": 6300}
+                  {"color": "yellow", "value": 8800},
+                  {"color": "red", "value": 9900}
                 ]
               }
             }
           },
-          "gridPos": {"h": 8, "w": 6, "x": 0, "y": 34}
+          "gridPos": {"h": 8, "w": 6, "x": 0, "y": 32}
         },
+
         {
           "id": 6,
           "title": "Total Memory Usage",
           "type": "gauge",
-          "description": "Total memory consumption across all components",
+          "description": "Total memory consumption across all components compared to the sum of all container limits.",
           "targets": [
             {
-              "expr": "sum(process_resident_memory_bytes{namespace=\"{{ baseline_namespace }}\"}) / 1024 / 1024",
+              "expr": "sum(process_resident_memory_bytes{namespace=\"{{ baseline_namespace }}\", job!=\"trillian-db-exporter-metrics\"}) / 1024 / 1024",
               "refId": "A",
               "legendFormat": "Total Memory MB"
             }
@@ -281,21 +286,62 @@ spec:
             "defaults": {
               "unit": "mbytes",
               "min": 0,
-              "max": 5632,
+              "max": 7680,
               "thresholds": {
                 "mode": "absolute",
                 "steps": [
                   {"color": "green", "value": null},
-                  {"color": "yellow", "value": 3942},
-                  {"color": "red", "value": 5069}
+                  {"color": "yellow", "value": 6144},
+                  {"color": "red", "value": 6912}
                 ]
               }
             }
           },
-          "gridPos": {"h": 8, "w": 6, "x": 6, "y": 34}
+          "gridPos": {"h": 8, "w": 6, "x": 6, "y": 32}
         },
+
         {
           "id": 7,
+          "title": "Database Throughput (ops/s)",
+          "type": "timeseries",
+          "description": "Read, write, and total query operations per second on the Trillian database.",
+          "targets": [
+            {
+              "expr": "sum by (job)(rate(mysql_global_status_queries{namespace=\"{{ baseline_namespace }}\"}[2m]))",
+              "refId": "A",
+              "legendFormat": "Total QPS"
+            },
+            {
+              "expr": "sum by (job)(rate(mysql_global_status_commands_total{namespace=\"{{ baseline_namespace }}\", command=\"select\"}[2m]))",
+              "refId": "B",
+              "legendFormat": "Selects/sec"
+            },
+            {
+              "expr": "sum by (job)(rate(mysql_global_status_commands_total{namespace=\"{{ baseline_namespace }}\", command=\"insert\"}[2m]))",
+              "refId": "C",
+              "legendFormat": "Inserts/sec"
+            },
+            {
+              "expr": "sum by (job)(rate(mysql_global_status_commands_total{job=\"trillian-db-exporter-metrics\", command=\"update\"}[2m]))",
+              "refId": "D",
+              "legendFormat": "Updates/sec"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "ops",
+              "custom": { "drawStyle": "line", "lineInterpolation": "smooth", "lineWidth": 2, "fillOpacity": 10, "axisLabel": "Operations per Second" }
+            }
+          },
+          "options": {
+            "tooltip": {"mode": "multi", "sort": "desc"},
+            "legend": { "displayMode": "table", "placement": "right", "calcs": ["max", "mean", "lastNotNull"] }
+          },
+          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 32}
+        },
+
+        {
+          "id": 8,
           "title": "Performance Summary (Last 10 Minutes)",
           "type": "stat",
           "description": "Key performance indicators over the last 10 minutes",
@@ -367,10 +413,11 @@ spec:
             "textMode": "value_and_name",
             "colorMode": "value"
           },
-          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 34}
+          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 40}
         },
+
         {
-          "id": 8,
+          "id": 9,
           "title": "Component Health Status",
           "type": "stat",
           "description": "Health check for all TAS components",
@@ -399,7 +446,7 @@ spec:
               }
             }
           },
-          "gridPos": {"h": 4, "w": 24, "x": 0, "y": 42}
+          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 40}
         }
       ]
     }

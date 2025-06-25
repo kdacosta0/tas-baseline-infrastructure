@@ -1,0 +1,24 @@
+# db-servicemonitor.yaml
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: trillian-db-metrics
+  namespace: tas-monitoring
+  labels:
+    app.kubernetes.io/component: trillian-db-exporter
+    app.kubernetes.io/instance: securesign-sample
+    app.kubernetes.io/managed-by: manual
+    app.kubernetes.io/name: prometheus-k8s-trillian-db
+    app.kubernetes.io/part-of: trusted-artifact-signer
+spec:
+  endpoints:
+  - interval: 30s
+    port: metrics
+    scheme: http
+  namespaceSelector: {}
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: trillian-db-exporter
+      app.kubernetes.io/instance: securesign-sample
+      app.kubernetes.io/managed-by: manual
+      app.kubernetes.io/part-of: trusted-artifact-signer

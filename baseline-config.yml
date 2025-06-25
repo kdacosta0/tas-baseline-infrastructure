@@ -23,6 +23,7 @@ certificates:
 
 storage:
   tuf_size: "100Mi"
+  trillian_database_size: "10Gi"
 
 resources:
   trillian_logserver:
@@ -39,6 +40,13 @@ resources:
     limits:
       cpu: "1500m"
       memory: "1Gi"
+  trillian_database:
+    requests:
+      cpu: "4000m"
+      memory: "2Gi"
+    limits:
+      cpu: "4000m"
+      memory: "2Gi"
   rekor:
     requests:
       cpu: "500m"

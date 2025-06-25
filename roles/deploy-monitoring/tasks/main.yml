@@ -1,12 +1,67 @@
 # Deploy TAS Monitoring Stack (Grafana + Dashboards)
 ---
-- name: "Starting TAS monitoring deployment"
-  debug:
-    msg:
-      - "Deploying TAS Monitoring Stack"
-      - "Namespace: {{ baseline_namespace }}"
-      - "Grafana instance: {{ monitoring.grafana.instance_name }}"
-      - "Dashboard: {{ monitoring.dashboard.name }}"
+- name: Find the trillian database secret to get credentials
+  k8s_info:
+    api_version: v1
+    kind: Secret
+    namespace: "{{ baseline_namespace }}"
+    label_selectors:
+      - "app.kubernetes.io/component=trillian-db"
+  register: trillian_db_secret_info
+  until: trillian_db_secret_info.resources | length > 0
+  retries: 10
+  delay: 15
+
+- name: Set database credential facts
+  set_fact:
+    db_secret_name: "{{ trillian_db_secret_info.resources[0].metadata.name }}"
+
+- name: Get database credentials from secret
+  k8s_info:
+    api_version: v1
+    kind: Secret
+    namespace: "{{ baseline_namespace }}"
+    name: "{{ db_secret_name }}"
+  register: db_credentials
+
+- name: Set database user and password facts
+  set_fact:
+    db_user: "{{ db_credentials.resources[0].data['mysql-user'] | b64decode }}"
+    db_password: "{{ db_credentials.resources[0].data['mysql-password'] | b64decode }}"
+
+- name: Deploy the Database Exporter Secret
+  k8s:
+    state: present
+    definition: "{{ lookup('template', 'db-exporter-secret.yml.j2') }}"
+
+- name: Deploy the Database Exporter Deployment
+  k8s:
+    state: present
+    definition: "{{ lookup('template', 'db-exporter-deployment.yml.j2') }}"
+
+- name: Deploy the Database Exporter Service
+  k8s:
+    state: present
+    definition: "{{ lookup('template', 'db-exporter-service.yml.j2') }}"
+  register: exporter_deployment_result
+
+- name: "Wait for Database Exporter deployment to be ready"
+  k8s_info:
+    api_version: apps/v1
+    kind: Deployment
+    name: "trillian-db-exporter"
+    namespace: "{{ baseline_namespace }}"
+    wait: true
+    wait_condition:
+      type: Available
+      status: "True"
+    wait_timeout: 300
+  when: exporter_deployment_result.changed
+
+- name: Deploy the Database Exporter ServiceMonitor
+  k8s:
+    state: present
+    definition: "{{ lookup('template', 'db-servicemonitor.yml.j2') }}"
 
 - name: "Create Grafana ServiceAccount"
   k8s:
