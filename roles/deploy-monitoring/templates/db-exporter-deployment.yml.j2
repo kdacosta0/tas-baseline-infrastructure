@@ -1,0 +1,51 @@
+# db-exporter-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: trillian-db-exporter
+  namespace: tas-monitoring
+  labels:
+    app.kubernetes.io/component: trillian-db-exporter
+    app.kubernetes.io/instance: securesign-sample
+    app.kubernetes.io/managed-by: manual
+    app.kubernetes.io/name: trillian-db-exporter
+    app.kubernetes.io/part-of: trusted-artifact-signer
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: trillian-db-exporter
+      app.kubernetes.io/instance: securesign-sample
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/component: trillian-db-exporter
+        app.kubernetes.io/instance: securesign-sample
+    spec:
+      containers:
+      - name: mysql-exporter
+        image: prom/mysqld-exporter:v0.15.1
+        args:
+        - "--config.my-cnf=/etc/mysql-exporter/my.cnf"
+        - "--no-collect.info_schema.innodb_cmp"
+        - "--no-collect.info_schema.innodb_cmpmem"
+        - "--no-collect.slave_status"
+        ports:
+        - name: metrics
+          containerPort: 9104
+        volumeMounts:
+        - name: mysql-exporter-config
+          mountPath: "/etc/mysql-exporter"
+          readOnly: true
+        securityContext:
+          runAsNonRoot: true
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
+          seccompProfile:
+            type: RuntimeDefault
+      volumes:
+      - name: mysql-exporter-config
+        secret:
+          secretName: trillian-db-exporter-secret

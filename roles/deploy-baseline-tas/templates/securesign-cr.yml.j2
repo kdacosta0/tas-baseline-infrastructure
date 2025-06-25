@@ -41,6 +41,11 @@ spec:
       enabled: {{ components.trillian.monitoring_enabled }}
     database:
       create: {{ components.trillian.database_create }}
+      pvc:
+        accessModes:
+          - ReadWriteOnce
+        retain: true
+        size: {{ storage.trillian_database_size }}
 
   tsa:
     externalAccess:
