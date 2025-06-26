@@ -1,35 +1,35 @@
-# db-exporter-deployment.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: trillian-db-exporter
-  namespace: tas-monitoring
+  namespace: "{{ baseline_namespace }}"
   labels:
-    app.kubernetes.io/component: trillian-db-exporter
-    app.kubernetes.io/instance: securesign-sample
-    app.kubernetes.io/managed-by: manual
-    app.kubernetes.io/name: trillian-db-exporter
-    app.kubernetes.io/part-of: trusted-artifact-signer
+    app: trillian-db-exporter
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app.kubernetes.io/component: trillian-db-exporter
-      app.kubernetes.io/instance: securesign-sample
+      app: trillian-db-exporter
   template:
     metadata:
       labels:
-        app.kubernetes.io/component: trillian-db-exporter
-        app.kubernetes.io/instance: securesign-sample
+        app: trillian-db-exporter
     spec:
       containers:
       - name: mysql-exporter
-        image: prom/mysqld-exporter:v0.15.1
-        args:
-        - "--config.my-cnf=/etc/mysql-exporter/my.cnf"
-        - "--no-collect.info_schema.innodb_cmp"
-        - "--no-collect.info_schema.innodb_cmpmem"
-        - "--no-collect.slave_status"
+        image: prom/mysqld-exporter:v0.17.2
+        command:
+          - "/bin/sh"
+          - "-c"
+          - |
+            echo "Pausing for 30 seconds to allow database to fully initialize..."
+            sleep 30
+            echo "Config file should be present. Starting exporter."
+            /bin/mysqld_exporter \
+              --config.my-cnf=/etc/mysql-exporter/my.cnf \
+              --no-collect.info_schema.innodb_cmp \
+              --no-collect.info_schema.innodb_cmpmem \
+              --no-collect.slave_status
         ports:
         - name: metrics
           containerPort: 9104

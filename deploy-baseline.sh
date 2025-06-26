@@ -5,6 +5,7 @@ set -euo pipefail
 # Configuration
 BASELINE_NAMESPACE="tas-monitoring"
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+VENV_DIR="${SCRIPT_DIR}/ansible_venv"
 
 # Colors for output
 RED='\033[0;31m'
@@ -27,20 +28,26 @@ else
     exit 1
 fi
 
-# Check/install Ansible
-if ! command -v ansible-playbook &> /dev/null; then
-    echo -e "${YELLOW}Installing Ansible and Python dependencies for Ansible k8s module...${NC}"
-    pip3 install ansible kubernetes PyYAML
+# Check for virtual environment and install dependencies if needed
+if [ ! -f "${VENV_DIR}/bin/ansible-playbook" ]; then
+    echo -e "${YELLOW}Setting up Python virtual environment and installing Ansible...${NC}"
+    python3 -m venv "${VENV_DIR}"
+    
+    # Install Python dependencies into the venv
+    echo -e "${YELLOW}Installing ansible-core, kubernetes, and PyYAML...${NC}"
+    "${VENV_DIR}/bin/pip" install ansible-core kubernetes PyYAML
+    
+    # Install Ansible Kubernetes collection into the venv
+    echo -e "${YELLOW}Installing Kubernetes collection...${NC}"
+    "${VENV_DIR}/bin/ansible-galaxy" collection install kubernetes.core
+else
+    echo -e "${GREEN}Ansible environment is already set up.${NC}"
 fi
-
-# Install Kubernetes collection
-echo -e "${YELLOW}Installing Ansible Kubernetes collection...${NC}"
-ansible-galaxy collection install kubernetes.core --force-with-deps
 
 # Run deployment
 echo ""
 echo -e "${BLUE}Starting baseline infrastructure deployment...${NC}"
-ansible-playbook -i inventory.yml setup-baseline.yml \
+"${VENV_DIR}/bin/ansible-playbook" -i inventory.yml setup-baseline.yml \
     -e baseline_namespace="$BASELINE_NAMESPACE" 
     
 # Final status

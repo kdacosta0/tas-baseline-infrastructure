@@ -1,20 +1,14 @@
-# db-exporter-service.yaml
 apiVersion: v1
 kind: Service
 metadata:
   name: trillian-db-exporter-metrics
-  namespace: tas-monitoring
+  namespace: "{{ baseline_namespace }}"
   labels:
-    app.kubernetes.io/component: trillian-db-exporter
-    app.kubernetes.io/instance: securesign-sample
-    app.kubernetes.io/managed-by: manual
-    app.kubernetes.io/name: trillian-db-exporter
-    app.kubernetes.io/part-of: trusted-artifact-signer
+    app: trillian-db-exporter
 spec:
   ports:
   - name: metrics
     port: 9104
     targetPort: metrics
   selector:
-    app.kubernetes.io/component: trillian-db-exporter
-    app.kubernetes.io/instance: securesign-sample
+    app: trillian-db-exporter

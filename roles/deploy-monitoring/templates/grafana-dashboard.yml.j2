@@ -31,17 +31,17 @@ spec:
             {
               "expr": "sum by (job)(rate(fulcio_new_certs{namespace=\"{{ baseline_namespace }}\"}[2m]))",
               "refId": "A",
-              "legendFormat": "Certificates Issued - {% raw %}{{job}}{% endraw %}"
+              "legendFormat": "Certificates Issued - {% raw %}{{ job }}{% endraw %}"
             },
             {
               "expr": "sum by (job)(rate(rekor_new_entries{namespace=\"{{ baseline_namespace }}\"}[2m]))",
               "refId": "B", 
-              "legendFormat": "Audit Entries - {% raw %}{{job}}{% endraw %}"
+              "legendFormat": "Audit Entries - {% raw %}{{ job }}{% endraw %}"
             },
             {
               "expr": "sum by (job)(rate(entries_added{namespace=\"{{ baseline_namespace }}\"}[2m]))",
               "refId": "C",
-              "legendFormat": "Entries Processed - {% raw %}{{job}}{% endraw %}"
+              "legendFormat": "Entries Processed - {% raw %}{{ job }}{% endraw %}"
             }
           ],
           "fieldConfig": {
@@ -101,32 +101,32 @@ spec:
             {
               "expr": "sum by (job)(rate(timestamp_authority_http_requests_total{namespace=\"{{ baseline_namespace }}\"}[2m]))",
               "refId": "A",
-              "legendFormat": "TSA Requests - {% raw %}{{job}}{% endraw %}"
+              "legendFormat": "TSA Requests - {% raw %}{{ job }}{% endraw %}"
             },
             {
               "expr": "sum by (job)(rate(http_requests_total{namespace=\"{{ baseline_namespace }}\"}[2m]))",
               "refId": "B",
-              "legendFormat": "HTTP Requests - {% raw %}{{job}}{% endraw %}"
+              "legendFormat": "HTTP Requests - {% raw %}{{ job }}{% endraw %}"
             },
             {
               "expr": "sum by (job)(rate(grpc_server_handled_total{namespace=\"{{ baseline_namespace }}\"}[2m]))",
               "refId": "C",
-              "legendFormat": "gRPC Requests - {% raw %}{{job}}{% endraw %}"
+              "legendFormat": "gRPC Requests - {% raw %}{{ job }}{% endraw %}"
             },
             {
               "expr": "sum by (job)(rate(log_rpc_requests{namespace=\"{{ baseline_namespace }}\"}[2m]))",
               "refId": "D",
-              "legendFormat": "Log RPC - {% raw %}{{job}}{% endraw %}"
+              "legendFormat": "Log RPC - {% raw %}{{ job }}{% endraw %}"
             },
             {
               "expr": "sum by (job)(rate(http_reqs{namespace=\"{{ baseline_namespace }}\"}[2m]))",
               "refId": "E",
-              "legendFormat": "CTLog Requests - {% raw %}{{job}}{% endraw %}"
+              "legendFormat": "CTLog Requests - {% raw %}{{ job }}{% endraw %}"
             },
             {
               "expr": "sum by (job)(rate(rekor_qps_by_api{namespace=\"{{ baseline_namespace }}\"}[2m]))",
               "refId": "F",
-              "legendFormat": "Rekor QPS - {% raw %}{{job}}{% endraw %}"
+              "legendFormat": "Rekor QPS - {% raw %}{{ job }}{% endraw %}"
             }
           ],
           "fieldConfig": {
@@ -163,7 +163,7 @@ spec:
             {
               "expr": "sum by (job)(rate(process_cpu_seconds_total{namespace=\"{{ baseline_namespace }}\", job!=\"trillian-db-exporter-metrics\"}[2m])) * 1000",
               "refId": "A",
-              "legendFormat": "{% raw %}{{job}}{% endraw %}"
+              "legendFormat": "{% raw %}{{ job }}{% endraw %}"
             }
           ],
           "fieldConfig": {
@@ -206,7 +206,7 @@ spec:
             {
               "expr": "sum by (job)(process_resident_memory_bytes{namespace=\"{{ baseline_namespace }}\", job!=\"trillian-db-exporter-metrics\"}) / 1024 / 1024",
               "refId": "A",
-              "legendFormat": "{% raw %}{{job}}{% endraw %}"
+              "legendFormat": "{% raw %}{{ job }}{% endraw %}"
             }
           ],
           "fieldConfig": {

@@ -7,7 +7,7 @@ baseline:
 # TODO: OIDC Configuration Analysis Required
 # - Evaluate impact of different OIDC providers on resource utilization
 oidc:
-  issuer_url: "https://your-oidc-issuer-url"
+  issuer_url: "https://keycloak-keycloak-system.apps.rhtas-perf.fuse.integration-qe.com/auth/realms/trusted-artifact-signer"
   client_id: "trusted-artifact-signer"
   type: "email"
   
