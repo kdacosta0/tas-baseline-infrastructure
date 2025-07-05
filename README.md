@@ -2,6 +2,16 @@
 
 This repository contains the infrastructure code for deploying a standardized Trusted Artifact Signer (TAS) baseline environment on OpenShift. The infrastructure is designed to be easily deployable and configurable for performance testing and monitoring.
 
+## Table of Contents
+- [Overview](#overview)
+- [Prerequisites](#prerequisites)
+- [Components](#components)
+- [Quick Start](#quick-start)
+- [Available `make` Commands](#available-make-commands)
+- [Configuration](#configuration)
+- [Monitoring](#monitoring)
+- [License](#license)
+
 ## Overview
 
 The TAS Baseline Infrastructure provides a complete setup for:
@@ -73,18 +83,6 @@ The infrastructure can be configured through `baseline-config.yml`. Key configur
 - Component enablement
 - Monitoring settings
 - Storage configurations
-
-## Directory Structure
-
-```
-.
-├── Makefile              # Build and deployment automation
-├── baseline-config.yml   # Main configuration file
-├── deploy-baseline.sh    # Deployment script
-├── inventory.yml         # Ansible inventory
-├── setup-baseline.yml    # Main Ansible playbook
-└── roles/                # Ansible roles for deployment
-```
 
 ## Monitoring
 
