@@ -8,445 +8,1289 @@ spec:
     matchLabels:
       dashboards: {{ monitoring.grafana.instance_name }}
   json: |
-    {
-      "id": null,
-      "uid": "{{ monitoring.dashboard.name }}",
-      "title": "{{ monitoring.dashboard.title }}",
-      "description": "Performance monitoring for TAS baseline infrastructure",
-      "tags": ["tas", "performance", "baseline-infrastructure"],
-      "style": "dark",
-      "timezone": "browser", 
-      "refresh": "{{ monitoring.dashboard.refresh_interval }}",
-      "time": {
-        "from": "now-{{ monitoring.dashboard.time_range }}",
-        "to": "now"
-      },
-      "panels": [
-        {
-          "id": 1,
-          "title": "Primary Business Throughput (ops/s)",
-          "type": "timeseries",
-          "description": "Core business operations - certificates, audit entries, signature processing",
-          "targets": [
-            {
-              "expr": "sum by (job)(rate(fulcio_new_certs{namespace=\"{{ baseline_namespace }}\"}[2m]))",
-              "refId": "A",
-              "legendFormat": "Certificates Issued - {% raw %}{{ job }}{% endraw %}"
-            },
-            {
-              "expr": "sum by (job)(rate(rekor_new_entries{namespace=\"{{ baseline_namespace }}\"}[2m]))",
-              "refId": "B", 
-              "legendFormat": "Audit Entries - {% raw %}{{ job }}{% endraw %}"
-            },
-            {
-              "expr": "sum by (job)(rate(entries_added{namespace=\"{{ baseline_namespace }}\"}[2m]))",
-              "refId": "C",
-              "legendFormat": "Entries Processed - {% raw %}{{ job }}{% endraw %}"
-            }
+      {
+          "id": null,
+          "uid": "{{ monitoring.dashboard.name }}",
+          "title": "{{ monitoring.dashboard.title }}",
+          "description": "Performance monitoring for TAS baseline infrastructure",
+          "tags": [
+              "tas",
+              "performance",
+              "baseline-infrastructure"
           ],
-          "fieldConfig": {
-            "defaults": {
-              "unit": "ops",
-              "custom": {
-                "drawStyle": "line",
-                "lineInterpolation": "smooth",
-                "lineWidth": 3,
-                "fillOpacity": 15,
-                "pointSize": 5,
-                "axisLabel": "Operations per Second"
-              },
-              "color": {"mode": "palette-classic"},
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {"color": "green", "value": null},
-                  {"color": "yellow", "value": 5},
-                  {"color": "red", "value": 20}
-                ]
-              }
-            },
-            "overrides": [
+          "style": "dark",
+          "timezone": "browser",
+          "refresh": "{{ monitoring.dashboard.refresh_interval }}",
+          "time": {
+              "from": "now-{{ monitoring.dashboard.time_range }}",
+              "to": "now"
+          },
+          "panels": [
               {
-                "matcher": {"id": "byRegexp", "options": "Certificates.*"},
-                "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "blue"}}]
-              },
-              {
-                "matcher": {"id": "byRegexp", "options": "Log Entries.*"},
-                "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "green"}}]
-              },
-              {
-                "matcher": {"id": "byRegexp", "options": "Entries Processed.*"},
-                "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "orange"}}]
-              }
-            ]
-          },
-          "options": {
-            "tooltip": {"mode": "multi", "sort": "desc"},
-            "legend": {
-              "displayMode": "table",
-              "placement": "bottom",
-              "calcs": ["max", "mean", "lastNotNull"],
-              "showLegend": true
-            }
-          },
-          "gridPos": {"h": 10, "w": 24, "x": 0, "y": 0}
-        },
-
-        {
-          "id": 2,
-          "title": "API & System Throughput (ops/s)",
-          "type": "timeseries",
-          "description": "API requests, system operations, and TSA timestamp requests",
-          "targets": [
-            {
-              "expr": "sum by (job)(rate(timestamp_authority_http_requests_total{namespace=\"{{ baseline_namespace }}\"}[2m]))",
-              "refId": "A",
-              "legendFormat": "TSA Requests - {% raw %}{{ job }}{% endraw %}"
-            },
-            {
-              "expr": "sum by (job)(rate(http_requests_total{namespace=\"{{ baseline_namespace }}\"}[2m]))",
-              "refId": "B",
-              "legendFormat": "HTTP Requests - {% raw %}{{ job }}{% endraw %}"
-            },
-            {
-              "expr": "sum by (job)(rate(grpc_server_handled_total{namespace=\"{{ baseline_namespace }}\"}[2m]))",
-              "refId": "C",
-              "legendFormat": "gRPC Requests - {% raw %}{{ job }}{% endraw %}"
-            },
-            {
-              "expr": "sum by (job)(rate(log_rpc_requests{namespace=\"{{ baseline_namespace }}\"}[2m]))",
-              "refId": "D",
-              "legendFormat": "Log RPC - {% raw %}{{ job }}{% endraw %}"
-            },
-            {
-              "expr": "sum by (job)(rate(http_reqs{namespace=\"{{ baseline_namespace }}\"}[2m]))",
-              "refId": "E",
-              "legendFormat": "CTLog Requests - {% raw %}{{ job }}{% endraw %}"
-            },
-            {
-              "expr": "sum by (job)(rate(rekor_qps_by_api{namespace=\"{{ baseline_namespace }}\"}[2m]))",
-              "refId": "F",
-              "legendFormat": "Rekor QPS - {% raw %}{{ job }}{% endraw %}"
-            }
-          ],
-          "fieldConfig": {
-            "defaults": {
-              "unit": "ops",
-              "custom": {
-                "drawStyle": "line",
-                "lineInterpolation": "smooth",
-                "lineWidth": 3,
-                "fillOpacity": 15,
-                "pointSize": 5,
-                "axisLabel": "Operations per Second"
-              }
-            }
-          },
-          "options": {
-            "tooltip": {"mode": "multi", "sort": "desc"},
-            "legend": {
-              "displayMode": "table",
-              "placement": "bottom",
-              "calcs": ["max", "mean", "lastNotNull"],
-              "showLegend": true
-            }
-          },
-          "gridPos": {"h": 14, "w": 24, "x": 0, "y": 10}
-        },
-
-        {
-          "id": 3,
-          "title": "CPU Usage by Component (mCPU)",
-          "type": "timeseries",
-          "description": "CPU utilization per TAS component in millicores",
-          "targets": [
-            {
-              "expr": "sum by (job)(rate(process_cpu_seconds_total{namespace=\"{{ baseline_namespace }}\", job!=\"trillian-db-exporter-metrics\"}[2m])) * 1000",
-              "refId": "A",
-              "legendFormat": "{% raw %}{{ job }}{% endraw %}"
-            }
-          ],
-          "fieldConfig": {
-            "defaults": {
-              "unit": "mCPU",
-              "min": 0,
-              "custom": {
-                "drawStyle": "line",
-                "lineWidth": 3,
-                "fillOpacity": 20,
-                "axisLabel": "millicores"
-              },
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {"color": "green", "value": null},
-                  {"color": "yellow", "value": 500},
-                  {"color": "red", "value": 800}
-                ]
-              }
-            }
-          },
-          "options": {
-            "tooltip": {"mode": "multi"},
-            "legend": {
-              "displayMode": "table",
-              "placement": "right",
-              "calcs": ["max", "mean", "lastNotNull"]
-            }
-          },
-          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 24}
-        },
-
-        {
-          "id": 4,
-          "title": "Memory Usage by Component (MB)",
-          "type": "timeseries", 
-          "description": "Actual memory consumption in MB",
-          "targets": [
-            {
-              "expr": "sum by (job)(process_resident_memory_bytes{namespace=\"{{ baseline_namespace }}\", job!=\"trillian-db-exporter-metrics\"}) / 1024 / 1024",
-              "refId": "A",
-              "legendFormat": "{% raw %}{{ job }}{% endraw %}"
-            }
-          ],
-          "fieldConfig": {
-            "defaults": {
-              "unit": "mbytes",
-              "min": 0,
-              "custom": {
-                "drawStyle": "line",
-                "lineWidth": 3,
-                "fillOpacity": 15,
-                "axisLabel": "Memory (MB)"
-              },
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {"color": "green", "value": null},
-                  {"color": "yellow", "value": 800},
-                  {"color": "red", "value": 1500}
-                ]
-              }
-            }
-          },
-          "options": {
-            "tooltip": {"mode": "multi"},
-            "legend": {
-              "displayMode": "table", 
-              "placement": "right",
-              "calcs": ["min", "max", "mean", "lastNotNull"]
-            }
-          },
-          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 24}
-        },
-
-        {
-          "id": 5,
-          "title": "Overall CPU Usage",
-          "type": "gauge",
-          "description": "Total CPU usage across all TAS components compared to the sum of all container limits.",
-          "targets": [
-            {
-              "expr": "sum(rate(process_cpu_seconds_total{namespace=\"{{ baseline_namespace }}\", job!=\"trillian-db-exporter-metrics\"}[2m])) * 1000",
-              "refId": "A",
-              "legendFormat": "Total mCPU"
-            }
-          ],
-          "fieldConfig": {
-            "defaults": {
-              "unit": "mCPU",
-              "min": 0,
-              "max": 11000,
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {"color": "green", "value": null},
-                  {"color": "yellow", "value": 8800},
-                  {"color": "red", "value": 9900}
-                ]
-              }
-            }
-          },
-          "gridPos": {"h": 8, "w": 6, "x": 0, "y": 32}
-        },
-
-        {
-          "id": 6,
-          "title": "Total Memory Usage",
-          "type": "gauge",
-          "description": "Total memory consumption across all components compared to the sum of all container limits.",
-          "targets": [
-            {
-              "expr": "sum(process_resident_memory_bytes{namespace=\"{{ baseline_namespace }}\", job!=\"trillian-db-exporter-metrics\"}) / 1024 / 1024",
-              "refId": "A",
-              "legendFormat": "Total Memory MB"
-            }
-          ],
-          "fieldConfig": {
-            "defaults": {
-              "unit": "mbytes",
-              "min": 0,
-              "max": 7680,
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {"color": "green", "value": null},
-                  {"color": "yellow", "value": 6144},
-                  {"color": "red", "value": 6912}
-                ]
-              }
-            }
-          },
-          "gridPos": {"h": 8, "w": 6, "x": 6, "y": 32}
-        },
-
-        {
-          "id": 7,
-          "title": "Database Throughput (ops/s)",
-          "type": "timeseries",
-          "description": "Read, write, and total query operations per second on the Trillian database.",
-          "targets": [
-            {
-              "expr": "sum by (job)(rate(mysql_global_status_queries{namespace=\"{{ baseline_namespace }}\"}[2m]))",
-              "refId": "A",
-              "legendFormat": "Total QPS"
-            },
-            {
-              "expr": "sum by (job)(rate(mysql_global_status_commands_total{namespace=\"{{ baseline_namespace }}\", command=\"select\"}[2m]))",
-              "refId": "B",
-              "legendFormat": "Selects/sec"
-            },
-            {
-              "expr": "sum by (job)(rate(mysql_global_status_commands_total{namespace=\"{{ baseline_namespace }}\", command=\"insert\"}[2m]))",
-              "refId": "C",
-              "legendFormat": "Inserts/sec"
-            },
-            {
-              "expr": "sum by (job)(rate(mysql_global_status_commands_total{job=\"trillian-db-exporter-metrics\", command=\"update\"}[2m]))",
-              "refId": "D",
-              "legendFormat": "Updates/sec"
-            }
-          ],
-          "fieldConfig": {
-            "defaults": {
-              "unit": "ops",
-              "custom": { "drawStyle": "line", "lineInterpolation": "smooth", "lineWidth": 2, "fillOpacity": 10, "axisLabel": "Operations per Second" }
-            }
-          },
-          "options": {
-            "tooltip": {"mode": "multi", "sort": "desc"},
-            "legend": { "displayMode": "table", "placement": "right", "calcs": ["max", "mean", "lastNotNull"] }
-          },
-          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 32}
-        },
-
-        {
-          "id": 8,
-          "title": "Performance Summary (Last 10 Minutes)",
-          "type": "stat",
-          "description": "Key performance indicators over the last 10 minutes",
-          "targets": [
-            {
-              "expr": "sum(increase(fulcio_new_certs{namespace=\"{{ baseline_namespace }}\"}[10m]))",
-              "refId": "A",
-              "legendFormat": "Certificates Issued"
-            },
-            {
-              "expr": "sum(increase(rekor_new_entries{namespace=\"{{ baseline_namespace }}\"}[10m]))",
-              "refId": "B",
-              "legendFormat": "Log Entries Created"
-            },
-            {
-              "expr": "sum(increase(entries_added{namespace=\"{{ baseline_namespace }}\"}[10m]))",
-              "refId": "C",
-              "legendFormat": "Signatures Processed"
-            }
-          ],
-          "fieldConfig": {
-            "defaults": {
-              "custom": {
-                "displayMode": "lcd",
-                "orientation": "horizontal"
-              },
-              "color": {"mode": "thresholds"},
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {"color": "green", "value": null},
-                  {"color": "yellow", "value": 50},
-                  {"color": "red", "value": 100}
-                ]
-              }
-            },
-            "overrides": [
-              {
-                "matcher": {"id": "byName", "options": "Certificates Issued"},
-                "properties": [
-                  {"id": "color", "value": {"mode": "fixed", "fixedColor": "blue"}},
-                  {"id": "unit", "value": "short"},
-                  {"id": "decimals", "value": 0}
-                ]
+                  "id": 1,
+                  "title": "Primary Throughput (ops/s)",
+                  "type": "timeseries",
+                  "description": "Core operations - certificates, audit entries, signature processing",
+                  "targets": [
+                      {
+                          "expr": "sum by (job)(rate(fulcio_new_certs{namespace=\"{{ baseline_namespace }}\"}[2m]))",
+                          "refId": "A",
+                          "legendFormat": "Certificates Issued - {% raw %}{{ job }}{% endraw %}"
+                      },
+                      {
+                          "expr": "sum by (job)(rate(rekor_new_entries{namespace=\"{{ baseline_namespace }}\"}[2m]))",
+                          "refId": "B",
+                          "legendFormat": "Audit Entries - {% raw %}{{ job }}{% endraw %}"
+                      },
+                      {
+                          "expr": "sum by (job)(rate(entries_added{namespace=\"{{ baseline_namespace }}\"}[2m]))",
+                          "refId": "C",
+                          "legendFormat": "Entries Processed - {% raw %}{{ job }}{% endraw %}"
+                      }
+                  ],
+                  "fieldConfig": {
+                      "defaults": {
+                          "unit": "short",
+                          "min": 0,
+                          "custom": {
+                              "gradientMode": "none",
+                              "axisLabel": "Operations per Second",
+                              "lineWidth": 2,
+                              "drawStyle": "line"
+                          }
+                      },
+                      "overrides": [
+                          {
+                              "matcher": {
+                                  "id": "byName",
+                                  "options": "Certificates Issued - fulcio-server"
+                              },
+                              "properties": [
+                                  {
+                                      "id": "color",
+                                      "value": {
+                                          "mode": "fixed",
+                                          "fixedColor": "#33a02c"
+                                      }
+                                  },
+                                  {
+                                      "id": "lineWidth",
+                                      "value": 3
+                                  }
+                              ]
+                          },
+                          {
+                              "matcher": {
+                                  "id": "byName",
+                                  "options": "Audit Entries - rekor-server"
+                              },
+                              "properties": [
+                                  {
+                                      "id": "color",
+                                      "value": {
+                                          "mode": "fixed",
+                                          "fixedColor": "#ff7f00"
+                                      }
+                                  },
+                                  {
+                                      "id": "lineWidth",
+                                      "value": 2
+                                  }
+                              ]
+                          },
+                          {
+                              "matcher": {
+                                  "id": "byName",
+                                  "options": "Entries Processed - trillian-logsigner"
+                              },
+                              "properties": [
+                                  {
+                                      "id": "color",
+                                      "value": {
+                                          "mode": "fixed",
+                                          "fixedColor": "#6a3d9a"
+                                      }
+                                  },
+                                  {
+                                      "id": "lineWidth",
+                                      "value": 2
+                                  }
+                              ]
+                          }
+                      ]
+                  },
+                  "options": {
+                      "tooltip": {
+                          "mode": "multi",
+                          "sort": "desc",
+                          "shared": true
+                      },
+                      "legend": {
+                          "displayMode": "table",
+                          "placement": "right",
+                          "calcs": [
+                              "max",
+                              "mean",
+                              "lastNotNull"
+                          ],
+                          "showLegend": true,
+                          "fontSize": 13
+                      }
+                  },
+                  "gridPos": {
+                      "h": 8,
+                      "w": 24,
+                      "x": 0,
+                      "y": 0
+                  }
               },
               {
-                "matcher": {"id": "byName", "options": "Log Entries Created"},
-                "properties": [
-                  {"id": "color", "value": {"mode": "fixed", "fixedColor": "green"}},
-                  {"id": "unit", "value": "short"},
-                  {"id": "decimals", "value": 0}
-                ]
+                  "id": 2,
+                  "title": "API & System Throughput (ops/s)",
+                  "type": "timeseries",
+                  "description": "API requests, system operations, and TSA timestamp requests",
+                  "targets": [
+                      {
+                          "expr": "sum by (job)(rate(timestamp_authority_http_requests_total{namespace=\"{{ baseline_namespace }}\"}[2m]))",
+                          "refId": "A",
+                          "legendFormat": "TSA Requests - {% raw %}{{ job }}{% endraw %}"
+                      },
+                      {
+                          "expr": "sum by (job)(rate(http_requests_total{namespace=\"{{ baseline_namespace }}\"}[2m]))",
+                          "refId": "B",
+                          "legendFormat": "HTTP Requests - {% raw %}{{ job }}{% endraw %}"
+                      },
+                      {
+                          "expr": "sum by (job)(rate(grpc_server_handled_total{namespace=\"{{ baseline_namespace }}\"}[2m]))",
+                          "refId": "C",
+                          "legendFormat": "gRPC Requests - {% raw %}{{ job }}{% endraw %}"
+                      },
+                      {
+                          "expr": "sum by (job)(rate(log_rpc_requests{namespace=\"{{ baseline_namespace }}\"}[2m]))",
+                          "refId": "D",
+                          "legendFormat": "Log RPC - {% raw %}{{ job }}{% endraw %}"
+                      },
+                      {
+                          "expr": "sum by (job)(rate(http_reqs{namespace=\"{{ baseline_namespace }}\"}[2m]))",
+                          "refId": "E",
+                          "legendFormat": "CTLog Requests - {% raw %}{{ job }}{% endraw %}"
+                      },
+                      {
+                          "expr": "sum by (job)(rate(rekor_qps_by_api{namespace=\"{{ baseline_namespace }}\"}[2m]))",
+                          "refId": "F",
+                          "legendFormat": "Rekor QPS - {% raw %}{{ job }}{% endraw %}"
+                      }
+                  ],
+                  "fieldConfig": {
+                      "defaults": {
+                          "unit": "short",
+                          "min": 0,
+                          "custom": {
+                              "gradientMode": "none",
+                              "axisLabel": "Operations per Second",
+                              "lineWidth": 2,
+                              "drawStyle": "line"
+                          }
+                      },
+                      "overrides": [
+                          {
+                              "matcher": {
+                                  "id": "byName",
+                                  "options": "TSA Requests - tsa-server"
+                              },
+                              "properties": [
+                                  {
+                                      "id": "color",
+                                      "value": {
+                                          "mode": "fixed",
+                                          "fixedColor": "#a02c8f"
+                                      }
+                                  },
+                                  {
+                                      "id": "lineWidth",
+                                      "value": 2
+                                  }
+                              ]
+                          },
+                          {
+                              "matcher": {
+                                  "id": "byName",
+                                  "options": "HTTP Requests - fulcio-server"
+                              },
+                              "properties": [
+                                  {
+                                      "id": "color",
+                                      "value": {
+                                          "mode": "fixed",
+                                          "fixedColor": "#33a02c"
+                                      }
+                                  },
+                                  {
+                                      "id": "lineWidth",
+                                      "value": 2
+                                  }
+                              ]
+                          },
+                          {
+                              "matcher": {
+                                  "id": "byName",
+                                  "options": "gRPC Requests - fulcio-server"
+                              },
+                              "properties": [
+                                  {
+                                      "id": "color",
+                                      "value": {
+                                          "mode": "fixed",
+                                          "fixedColor": "#2ca08f"
+                                      }
+                                  },
+                                  {
+                                      "id": "lineWidth",
+                                      "value": 2,
+                                      "lineStyle": "dashed"
+                                  }
+                              ]
+                          },
+                          {
+                              "matcher": {
+                                  "id": "byName",
+                                  "options": "Log RPC - trillian-logserver"
+                              },
+                              "properties": [
+                                  {
+                                      "id": "color",
+                                      "value": {
+                                          "mode": "fixed",
+                                          "fixedColor": "#e31a1c"
+                                      }
+                                  },
+                                  {
+                                      "id": "lineWidth",
+                                      "value": 2
+                                  }
+                              ]
+                          },
+                          {
+                              "matcher": {
+                                  "id": "byName",
+                                  "options": "CTLog Requests - ctlog"
+                              },
+                              "properties": [
+                                  {
+                                      "id": "color",
+                                      "value": {
+                                          "mode": "fixed",
+                                          "fixedColor": "#1f78c1"
+                                      }
+                                  },
+                                  {
+                                      "id": "lineWidth",
+                                      "value": 2
+                                  }
+                              ]
+                          },
+                          {
+                              "matcher": {
+                                  "id": "byName",
+                                  "options": "Rekor QPS - rekor-server"
+                              },
+                              "properties": [
+                                  {
+                                      "id": "color",
+                                      "value": {
+                                          "mode": "fixed",
+                                          "fixedColor": "#ff7f00"
+                                      }
+                                  },
+                                  {
+                                      "id": "lineWidth",
+                                      "value": 2,
+                                      "lineStyle": "dotted"
+                                  }
+                              ]
+                          }
+                      ]
+                  },
+                  "options": {
+                      "tooltip": {
+                          "mode": "multi",
+                          "sort": "desc",
+                          "shared": true
+                      },
+                      "legend": {
+                          "displayMode": "table",
+                          "placement": "right",
+                          "calcs": [
+                              "max",
+                              "mean",
+                              "lastNotNull"
+                          ],
+                          "showLegend": true,
+                          "fontSize": 13
+                      }
+                  },
+                  "gridPos": {
+                      "h": 8,
+                      "w": 24,
+                      "x": 0,
+                      "y": 8
+                  }
               },
               {
-                "matcher": {"id": "byName", "options": "Signatures Processed"},
-                "properties": [
-                  {"id": "color", "value": {"mode": "fixed", "fixedColor": "orange"}},
-                  {"id": "unit", "value": "short"},
-                  {"id": "decimals", "value": 0}
-                ]
+                  "id": 3,
+                  "title": "Application CPU Usage (mCPU)",
+                  "type": "timeseries",
+                  "description": "CPU utilization per TAS component in millicores",
+                  "targets": [
+                      {
+                          "expr": "sum by (job)(rate(process_cpu_seconds_total{namespace=\"{{ baseline_namespace }}\", job!=\"trillian-db-exporter-metrics\"}[2m])) * 1000",
+                          "refId": "A",
+                          "legendFormat": "{% raw %}{{ job }}{% endraw %}"
+                      }
+                  ],
+                  "fieldConfig": {
+                      "defaults": {
+                          "unit": "short",
+                          "min": 0,
+                          "custom": {
+                              "axisLabel": "millicores",
+                              "lineWidth": 2,
+                              "drawStyle": "line"
+                          }
+                      },
+                      "overrides": [
+                          {
+                              "matcher": {
+                                  "id": "byName",
+                                  "options": "ctlog"
+                              },
+                              "properties": [
+                                  {
+                                      "id": "color",
+                                      "value": {
+                                          "mode": "fixed",
+                                          "fixedColor": "#1f78c1"
+                                      }
+                                  }
+                              ]
+                          },
+                          {
+                              "matcher": {
+                                  "id": "byName",
+                                  "options": "fulcio-server"
+                              },
+                              "properties": [
+                                  {
+                                      "id": "color",
+                                      "value": {
+                                          "mode": "fixed",
+                                          "fixedColor": "#33a02c"
+                                      }
+                                  }
+                              ]
+                          },
+                          {
+                              "matcher": {
+                                  "id": "byName",
+                                  "options": "rekor-server"
+                              },
+                              "properties": [
+                                  {
+                                      "id": "color",
+                                      "value": {
+                                          "mode": "fixed",
+                                          "fixedColor": "#ff7f00"
+                                      }
+                                  }
+                              ]
+                          },
+                          {
+                              "matcher": {
+                                  "id": "byName",
+                                  "options": "trillian-logserver"
+                              },
+                              "properties": [
+                                  {
+                                      "id": "color",
+                                      "value": {
+                                          "mode": "fixed",
+                                          "fixedColor": "#e31a1c"
+                                      }
+                                  }
+                              ]
+                          },
+                          {
+                              "matcher": {
+                                  "id": "byName",
+                                  "options": "trillian-logsigner"
+                              },
+                              "properties": [
+                                  {
+                                      "id": "color",
+                                      "value": {
+                                          "mode": "fixed",
+                                          "fixedColor": "#6a3d9a"
+                                      }
+                                  }
+                              ]
+                          },
+                          {
+                              "matcher": {
+                                  "id": "byName",
+                                  "options": "tsa-server"
+                              },
+                              "properties": [
+                                  {
+                                      "id": "color",
+                                      "value": {
+                                          "mode": "fixed",
+                                          "fixedColor": "#a02c8f"
+                                      }
+                                  }
+                              ]
+                          }
+                      ]
+                  },
+                  "options": {
+                      "tooltip": {
+                          "mode": "multi",
+                          "shared": true
+                      },
+                      "legend": {
+                          "displayMode": "table",
+                          "placement": "bottom",
+                          "calcs": [
+                              "max",
+                              "mean",
+                              "lastNotNull"
+                          ],
+                          "fontSize": 13
+                      }
+                  },
+                  "gridPos": {
+                      "h": 14,
+                      "w": 12,
+                      "x": 0,
+                      "y": 16
+                  }
+              },
+              {
+                  "id": 4,
+                  "title": "Application Memory Usage (MB)",
+                  "type": "timeseries",
+                  "description": "Actual memory consumption in MB",
+                  "targets": [
+                      {
+                          "expr": "sum by (job)(process_resident_memory_bytes{namespace=\"{{ baseline_namespace }}\", job!=\"trillian-db-exporter-metrics\"}) / 1024 / 1024",
+                          "refId": "A",
+                          "legendFormat": "{% raw %}{{ job }}{% endraw %}"
+                      }
+                  ],
+                  "fieldConfig": {
+                      "defaults": {
+                          "unit": "short",
+                          "min": 0,
+                          "custom": {
+                              "axisLabel": "MiB",
+                              "lineWidth": 2,
+                              "drawStyle": "line"
+                          }
+                      },
+                      "overrides": [
+                          {
+                              "matcher": {
+                                  "id": "byName",
+                                  "options": "ctlog"
+                              },
+                              "properties": [
+                                  {
+                                      "id": "color",
+                                      "value": {
+                                          "mode": "fixed",
+                                          "fixedColor": "#1f78c1"
+                                      }
+                                  }
+                              ]
+                          },
+                          {
+                              "matcher": {
+                                  "id": "byName",
+                                  "options": "fulcio-server"
+                              },
+                              "properties": [
+                                  {
+                                      "id": "color",
+                                      "value": {
+                                          "mode": "fixed",
+                                          "fixedColor": "#33a02c"
+                                      }
+                                  }
+                              ]
+                          },
+                          {
+                              "matcher": {
+                                  "id": "byName",
+                                  "options": "rekor-server"
+                              },
+                              "properties": [
+                                  {
+                                      "id": "color",
+                                      "value": {
+                                          "mode": "fixed",
+                                          "fixedColor": "#ff7f00"
+                                      }
+                                  }
+                              ]
+                          },
+                          {
+                              "matcher": {
+                                  "id": "byName",
+                                  "options": "trillian-logserver"
+                              },
+                              "properties": [
+                                  {
+                                      "id": "color",
+                                      "value": {
+                                          "mode": "fixed",
+                                          "fixedColor": "#e31a1c"
+                                      }
+                                  }
+                              ]
+                          },
+                          {
+                              "matcher": {
+                                  "id": "byName",
+                                  "options": "trillian-logsigner"
+                              },
+                              "properties": [
+                                  {
+                                      "id": "color",
+                                      "value": {
+                                          "mode": "fixed",
+                                          "fixedColor": "#6a3d9a"
+                                      }
+                                  }
+                              ]
+                          },
+                          {
+                              "matcher": {
+                                  "id": "byName",
+                                  "options": "tsa-server"
+                              },
+                              "properties": [
+                                  {
+                                      "id": "color",
+                                      "value": {
+                                          "mode": "fixed",
+                                          "fixedColor": "#a02c8f"
+                                      }
+                                  }
+                              ]
+                          }
+                      ]
+                  },
+                  "options": {
+                      "tooltip": {
+                          "mode": "multi",
+                          "shared": true
+                      },
+                      "legend": {
+                          "displayMode": "table",
+                          "placement": "bottom",
+                          "calcs": [
+                              "max",
+                              "mean",
+                              "lastNotNull"
+                          ],
+                          "fontSize": 13
+                      }
+                  },
+                  "gridPos": {
+                      "h": 14,
+                      "w": 12,
+                      "x": 12,
+                      "y": 16
+                  }
+              },
+              {
+                  "id": 10,
+                  "title": "Database Pod CPU Usage (mCPU)",
+                  "type": "timeseries",
+                  "description": "Total CPU usage by the Trillian database pod(s), excluding the exporter. Measured from the container infrastructure.",
+                  "targets": [
+                      {
+                          "expr": "sum(pod:container_cpu_usage:sum{pod=~\"trillian-db-.*\", pod!~\".*exporter.*\", namespace=\"{{ baseline_namespace }}\"}) * 1000",
+                          "refId": "A",
+                          "legendFormat": "trillian-db"
+                      }
+                  ],
+                  "fieldConfig": {
+                      "defaults": {
+                          "unit": "short",
+                          "min": 0,
+                          "custom": {
+                              "drawStyle": "line",
+                              "lineWidth": 3,
+                              "axisLabel": "millicores",
+                              "fillOpacity": 15,
+                              "color": {
+                                  "mode": "fixed",
+                                  "fixedColor": "#33a02c"
+                              }
+                          }
+                      },
+                      "overrides": [
+                          {
+                              "matcher": {
+                                  "id": "byName",
+                                  "options": "trillian-db"
+                              },
+                              "properties": [
+                                  {
+                                      "id": "color",
+                                      "value": {
+                                          "mode": "fixed",
+                                          "fixedColor": "#33a02c"
+                                      }
+                                  }
+                              ]
+                          }
+                      ]
+                  },
+                  "options": {
+                      "tooltip": {
+                          "mode": "multi",
+                          "shared": true
+                      },
+                      "legend": {
+                          "displayMode": "table",
+                          "placement": "bottom",
+                          "calcs": [
+                              "max",
+                              "mean",
+                              "lastNotNull"
+                          ],
+                          "fontSize": 13
+                      }
+                  },
+                  "gridPos": {
+                      "h": 8,
+                      "w": 12,
+                      "x": 0,
+                      "y": 30
+                  }
+              },
+              {
+                  "id": 11,
+                  "title": "Database Pod Memory Usage (MB)",
+                  "type": "timeseries",
+                  "description": "Total memory usage by the Trillian database pod(s), excluding the exporter. Measured from the container infrastructure.",
+                  "targets": [
+                      {
+                          "expr": "sum(container_memory_working_set_bytes{pod=~\"trillian-db-.*\", pod!~\".*exporter.*\", namespace=\"{{ baseline_namespace }}\"}) / 1024 / 1024",
+                          "refId": "A",
+                          "legendFormat": "trillian-db"
+                      }
+                  ],
+                  "fieldConfig": {
+                      "defaults": {
+                          "unit": "short",
+                          "min": 0,
+                          "custom": {
+                              "drawStyle": "line",
+                              "lineWidth": 3,
+                              "axisLabel": "MiB",
+                              "fillOpacity": 15,
+                              "color": {
+                                  "mode": "fixed",
+                                  "fixedColor": "#1f78c1"
+                              }
+                          }
+                      },
+                      "overrides": [
+                          {
+                              "matcher": {
+                                  "id": "byName",
+                                  "options": "trillian-db"
+                              },
+                              "properties": [
+                                  {
+                                      "id": "color",
+                                      "value": {
+                                          "mode": "fixed",
+                                          "fixedColor": "#33a02c"
+                                      }
+                                  }
+                              ]
+                          }
+                      ]
+                  },
+                  "options": {
+                      "tooltip": {
+                          "mode": "multi",
+                          "shared": true
+                      },
+                      "legend": {
+                          "displayMode": "table",
+                          "placement": "bottom",
+                          "calcs": [
+                              "max",
+                              "mean",
+                              "lastNotNull"
+                          ],
+                          "fontSize": 13
+                      }
+                  },
+                  "gridPos": {
+                      "h": 8,
+                      "w": 12,
+                      "x": 12,
+                      "y": 30
+                  }
+              },
+              {
+                  "id": 13,
+                  "title": "Database Throughput (QPS)",
+                  "type": "timeseries",
+                  "description": "Total queries, inserts, and selects per second on the database.",
+                  "targets": [
+                      {
+                          "expr": "rate(mysql_global_status_queries{namespace=\"{{ baseline_namespace }}\"}[2m])",
+                          "refId": "A",
+                          "legendFormat": "Total QPS"
+                      },
+                      {
+                          "expr": "rate(mysql_global_status_commands_total{namespace=\"{{ baseline_namespace }}\", command=\"insert\"}[2m])",
+                          "refId": "B",
+                          "legendFormat": "Inserts/sec"
+                      },
+                      {
+                          "expr": "rate(mysql_global_status_commands_total{namespace=\"{{ baseline_namespace }}\", command=\"select\"}[2m])",
+                          "refId": "C",
+                          "legendFormat": "Selects/sec"
+                      }
+                  ],
+                  "fieldConfig": {
+                      "defaults": {
+                          "unit": "short",
+                          "min": 0,
+                          "custom": {
+                              "lineWidth": 2,
+                              "axisLabel": "Queries per Second",
+                              "drawStyle": "line"
+                          }
+                      },
+                      "overrides": [
+                          {
+                              "matcher": {
+                                  "id": "byName",
+                                  "options": "Total QPS"
+                              },
+                              "properties": [
+                                  {
+                                      "id": "color",
+                                      "value": {
+                                          "mode": "fixed",
+                                          "fixedColor": "#33a02c"
+                                      }
+                                  },
+                                  {
+                                      "id": "lineWidth",
+                                      "value": 3
+                                  }
+                              ]
+                          },
+                          {
+                              "matcher": {
+                                  "id": "byName",
+                                  "options": "Inserts/sec"
+                              },
+                              "properties": [
+                                  {
+                                      "id": "color",
+                                      "value": {
+                                          "mode": "fixed",
+                                          "fixedColor": "#ff7f00"
+                                      }
+                                  },
+                                  {
+                                      "id": "lineWidth",
+                                      "value": 2,
+                                      "lineStyle": "dashed"
+                                  }
+                              ]
+                          },
+                          {
+                              "matcher": {
+                                  "id": "byName",
+                                  "options": "Selects/sec"
+                              },
+                              "properties": [
+                                  {
+                                      "id": "color",
+                                      "value": {
+                                          "mode": "fixed",
+                                          "fixedColor": "#1f78c1"
+                                      }
+                                  },
+                                  {
+                                      "id": "lineWidth",
+                                      "value": 2,
+                                      "lineStyle": "dotted"
+                                  }
+                              ]
+                          }
+                      ]
+                  },
+                  "options": {
+                      "tooltip": {
+                          "mode": "multi",
+                          "shared": true
+                      },
+                      "legend": {
+                          "displayMode": "table",
+                          "placement": "bottom",
+                          "calcs": [
+                              "max",
+                              "mean",
+                              "lastNotNull"
+                          ],
+                          "fontSize": 13
+                      }
+                  },
+                  "gridPos": {
+                      "h": 10,
+                      "w": 6,
+                      "x": 0,
+                      "y": 38
+                  }
+              },
+              {
+                  "id": 5,
+                  "title": "Database Slow Queries",
+                  "type": "timeseries",
+                  "description": "Number of queries per second that exceed the 'long_query_time' limit. Should be zero.",
+                  "targets": [
+                      {
+                          "expr": "rate(mysql_global_status_slow_queries{namespace=\"{{ baseline_namespace }}\"}[2m])",
+                          "refId": "A",
+                          "legendFormat": "Slow Queries"
+                      }
+                  ],
+                  "fieldConfig": {
+                      "defaults": {
+                          "unit": "short",
+                          "min": 0,
+                          "custom": {
+                              "lineWidth": 2,
+                              "color": {
+                                  "mode": "fixed",
+                                  "fixedColor": "#e31a1c"
+                              }
+                          }
+                      },
+                      "overrides": [
+                          {
+                              "matcher": {
+                                  "id": "byName",
+                                  "options": "Slow Queries"
+                              },
+                              "properties": [
+                                  {
+                                      "id": "color",
+                                      "value": {
+                                          "mode": "fixed",
+                                          "fixedColor": "#e31a1c"
+                                      }
+                                  }
+                              ]
+                          }
+                      ]
+                  },
+                  "options": {
+                      "tooltip": {
+                          "mode": "multi",
+                          "shared": true
+                      },
+                      "legend": {
+                          "displayMode": "table",
+                          "placement": "bottom",
+                          "calcs": [
+                              "lastNotNull"
+                          ],
+                          "fontSize": 13
+                      }
+                  },
+                  "gridPos": {
+                      "h": 10,
+                      "w": 6,
+                      "x": 6,
+                      "y": 38
+                  }
+              },
+              {
+                  "id": 6,
+                  "title": "Database Connection Usage",
+                  "type": "timeseries",
+                  "description": "Number of active vs. total connections to the database.",
+                  "targets": [
+                      {
+                          "expr": "mysql_global_status_threads_connected{namespace=\"{{ baseline_namespace }}\"}",
+                          "refId": "A",
+                          "legendFormat": "Connected"
+                      },
+                      {
+                          "expr": "mysql_global_status_threads_running{namespace=\"{{ baseline_namespace }}\"}",
+                          "refId": "B",
+                          "legendFormat": "Running"
+                      }
+                  ],
+                  "fieldConfig": {
+                      "defaults": {
+                          "unit": "short",
+                          "min": 0,
+                          "custom": {
+                              "lineWidth": 2,
+                              "drawStyle": "line"
+                          }
+                      },
+                      "overrides": [
+                          {
+                              "matcher": {
+                                  "id": "byName",
+                                  "options": "Connected"
+                              },
+                              "properties": [
+                                  {
+                                      "id": "color",
+                                      "value": {
+                                          "mode": "fixed",
+                                          "fixedColor": "#33a02c"
+                                      }
+                                  }
+                              ]
+                          },
+                          {
+                              "matcher": {
+                                  "id": "byName",
+                                  "options": "Running"
+                              },
+                              "properties": [
+                                  {
+                                      "id": "color",
+                                      "value": {
+                                          "mode": "fixed",
+                                          "fixedColor": "#ff7f00"
+                                      }
+                                  }
+                              ]
+                          }
+                      ]
+                  },
+                  "options": {
+                      "tooltip": {
+                          "mode": "multi",
+                          "shared": true
+                      },
+                      "legend": {
+                          "displayMode": "table",
+                          "placement": "bottom",
+                          "calcs": [
+                              "lastNotNull"
+                          ],
+                          "fontSize": 13
+                      }
+                  },
+                  "gridPos": {
+                      "h": 10,
+                      "w": 6,
+                      "x": 12,
+                      "y": 38
+                  }
+              },
+              {
+                  "id": 7,
+                  "title": "Database Row Lock Waits",
+                  "type": "timeseries",
+                  "description": "Rate of queries that had to wait for a row lock. Indicates contention.",
+                  "targets": [
+                      {
+                          "expr": "rate(mysql_global_status_innodb_row_lock_waits{namespace=\"{{ baseline_namespace }}\"}[2m])",
+                          "refId": "A",
+                          "legendFormat": "Lock Waits"
+                      }
+                  ],
+                  "fieldConfig": {
+                      "defaults": {
+                          "unit": "short",
+                          "min": 0,
+                          "custom": {
+                              "lineWidth": 2,
+                              "color": {
+                                  "mode": "fixed",
+                                  "fixedColor": "#e31a1c"
+                              }
+                          }
+                      },
+                      "overrides": [
+                          {
+                              "matcher": {
+                                  "id": "byName",
+                                  "options": "Lock Waits"
+                              },
+                              "properties": [
+                                  {
+                                      "id": "color",
+                                      "value": {
+                                          "mode": "fixed",
+                                          "fixedColor": "#e31a1c"
+                                      }
+                                  }
+                              ]
+                          }
+                      ]
+                  },
+                  "options": {
+                      "tooltip": {
+                          "mode": "multi",
+                          "shared": true
+                      },
+                      "legend": {
+                          "displayMode": "table",
+                          "placement": "bottom",
+                          "calcs": [
+                              "lastNotNull"
+                          ],
+                          "fontSize": 13
+                      }
+                  },
+                  "gridPos": {
+                      "h": 10,
+                      "w": 6,
+                      "x": 18,
+                      "y": 38
+                  }
+              },
+              {
+                  "id": 8,
+                  "title": "Performance Summary (Last 10 Minutes)",
+                  "type": "stat",
+                  "description": "Key performance indicators over the last 10 minutes",
+                  "targets": [
+                      {
+                          "expr": "sum(increase(fulcio_new_certs{namespace=\"{{ baseline_namespace }}\"}[10m]))",
+                          "refId": "A",
+                          "legendFormat": "Certificates Issued"
+                      },
+                      {
+                          "expr": "sum(increase(rekor_new_entries{namespace=\"{{ baseline_namespace }}\"}[10m]))",
+                          "refId": "B",
+                          "legendFormat": "Log Entries Created"
+                      },
+                      {
+                          "expr": "sum(increase(entries_added{namespace=\"{{ baseline_namespace }}\"}[10m]))",
+                          "refId": "C",
+                          "legendFormat": "Signatures Processed"
+                      }
+                  ],
+                  "fieldConfig": {
+                      "defaults": {
+                          "custom": {
+                              "displayMode": "lcd",
+                              "orientation": "horizontal"
+                          }
+                      },
+                      "overrides": [
+                          {
+                              "matcher": {
+                                  "id": "byName",
+                                  "options": "Certificates Issued"
+                              },
+                              "properties": [
+                                  {
+                                      "id": "color",
+                                      "value": {
+                                          "mode": "fixed",
+                                          "fixedColor": "#1f78c1"
+                                      }
+                                  },
+                                  {
+                                      "id": "unit",
+                                      "value": "short"
+                                  },
+                                  {
+                                      "id": "decimals",
+                                      "value": 0
+                                  },
+                                  {
+                                      "id": "textSize",
+                                      "value": 32
+                                  },
+                                  {
+                                      "id": "custom",
+                                      "value": {
+                                          "displayMode": "lcd"
+                                      }
+                                  }
+                              ]
+                          },
+                          {
+                              "matcher": {
+                                  "id": "byName",
+                                  "options": "Log Entries Created"
+                              },
+                              "properties": [
+                                  {
+                                      "id": "color",
+                                      "value": {
+                                          "mode": "fixed",
+                                          "fixedColor": "#33a02c"
+                                      }
+                                  },
+                                  {
+                                      "id": "unit",
+                                      "value": "short"
+                                  },
+                                  {
+                                      "id": "decimals",
+                                      "value": 0
+                                  },
+                                  {
+                                      "id": "textSize",
+                                      "value": 32
+                                  },
+                                  {
+                                      "id": "custom",
+                                      "value": {
+                                          "displayMode": "lcd"
+                                      }
+                                  }
+                              ]
+                          },
+                          {
+                              "matcher": {
+                                  "id": "byName",
+                                  "options": "Signatures Processed"
+                              },
+                              "properties": [
+                                  {
+                                      "id": "color",
+                                      "value": {
+                                          "mode": "fixed",
+                                          "fixedColor": "#ff7f00"
+                                      }
+                                  },
+                                  {
+                                      "id": "unit",
+                                      "value": "short"
+                                  },
+                                  {
+                                      "id": "decimals",
+                                      "value": 0
+                                  },
+                                  {
+                                      "id": "textSize",
+                                      "value": 32
+                                  },
+                                  {
+                                      "id": "custom",
+                                      "value": {
+                                          "displayMode": "lcd"
+                                      }
+                                  }
+                              ]
+                          }
+                      ]
+                  },
+                  "options": {
+                      "reduceOptions": {
+                          "calcs": [
+                              "lastNotNull"
+                          ]
+                      },
+                      "orientation": "vertical",
+                      "textMode": "value_and_name",
+                      "colorMode": "value",
+                      "textSize": 32
+                  },
+                  "gridPos": {
+                      "h": 6,
+                      "w": 18,
+                      "x": 6,
+                      "y": 48
+                  }
+              },
+              {
+                  "id": 9,
+                  "title": "Component Health Status",
+                  "type": "stat",
+                  "description": "Health check for all TAS components",
+                  "targets": [
+                      {
+                          "expr": "sum(up{namespace=\"{{ baseline_namespace }}\"})",
+                          "refId": "A",
+                          "legendFormat": "Services Up"
+                      },
+                      {
+                          "expr": "count(up{namespace=\"{{ baseline_namespace }}\"})",
+                          "refId": "B",
+                          "legendFormat": "Total Services"
+                      }
+                  ],
+                  "fieldConfig": {
+                      "overrides": [
+                          {
+                              "matcher": {
+                                  "id": "byName",
+                                  "options": "Services Up"
+                              },
+                              "properties": [
+                                  {
+                                      "id": "color",
+                                      "value": {
+                                          "mode": "fixed",
+                                          "fixedColor": "#33a02c"
+                                      }
+                                  },
+                                  {
+                                      "id": "textSize",
+                                      "value": 32
+                                  }
+                              ]
+                          },
+                          {
+                              "matcher": {
+                                  "id": "byName",
+                                  "options": "Total Services"
+                              },
+                              "properties": [
+                                  {
+                                      "id": "color",
+                                      "value": {
+                                          "mode": "fixed",
+                                          "fixedColor": "#33a02c"
+                                      }
+                                  },
+                                  {
+                                      "id": "textSize",
+                                      "value": 32
+                                  }
+                              ]
+                          }
+                      ]
+                  },
+                  "options": {
+                      "orientation": "horizontal",
+                      "textMode": "value_and_name",
+                      "colorMode": "value",
+                      "textSize": 32
+                  },
+                  "gridPos": {
+                      "h": 6,
+                      "w": 6,
+                      "x": 0,
+                      "y": 48
+                  }
               }
-            ]
-          },
-          "options": {
-            "reduceOptions": {
-              "calcs": ["lastNotNull"]
-            },
-            "orientation": "vertical",
-            "textMode": "value_and_name",
-            "colorMode": "value"
-          },
-          "gridPos": {"h": 6, "w": 12, "x": 12, "y": 40}
-        },
-
-        {
-          "id": 9,
-          "title": "Component Health Status",
-          "type": "stat",
-          "description": "Health check for all TAS components",
-          "targets": [
-            {
-              "expr": "sum(up{namespace=\"{{ baseline_namespace }}\"})",
-              "refId": "A",
-              "legendFormat": "Services Up"
-            },
-            {
-              "expr": "count(up{namespace=\"{{ baseline_namespace }}\"})",
-              "refId": "B",
-              "legendFormat": "Total Services"
-            }
-          ],
-          "fieldConfig": {
-            "defaults": {
-              "color": {"mode": "thresholds"},
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {"color": "red", "value": null},
-                  {"color": "yellow", "value": 5},
-                  {"color": "green", "value": 6}
-                ]
-              }
-            }
-          },
-          "gridPos": {"h": 6, "w": 12, "x": 0, "y": 40}
-        }
-      ]
-    }
+          ]
+      }

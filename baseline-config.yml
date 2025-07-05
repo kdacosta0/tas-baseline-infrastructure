@@ -31,7 +31,7 @@ resources:
       cpu: "750m"
       memory: "768Mi"
     limits:
-      cpu: "1500m"
+      cpu: "3000m"
       memory: "1.5Gi"
   trillian_logsigner:
     requests:

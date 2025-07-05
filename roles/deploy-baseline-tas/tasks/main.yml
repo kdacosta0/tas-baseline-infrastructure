@@ -140,16 +140,14 @@
      selectattr('type', 'equalto', 'Ready') | 
      selectattr('status', 'equalto', 'True') | list | length > 0)
 
+
 - name: "Apply resource requests and limits to Deployments"
   kubernetes.core.k8s_json_patch:
     kind: Deployment
     name: "{{ item.name }}"
     namespace: "{{ baseline.namespace }}"
     patch:
-      # This 'add' operation will create the 'resources' block if it doesn't exist,
-      # or completely replace it if it does. This ensures the desired state.
       - op: add
-        # ASSUMPTION: The target container is the first in the list (index 0).
         path: /spec/template/spec/containers/0/resources
         value:
           requests:
@@ -167,6 +165,8 @@
       resources: "{{ resources.trillian_logserver }}"
     - name: trillian-logsigner
       resources: "{{ resources.trillian_logsigner }}"
+    - name: trillian-db
+      resources: "{{ resources.trillian_database }}"
     - name: ctlog
       resources: "{{ resources.ctlog }}"
     - name: tsa-server

@@ -22,14 +22,13 @@ spec:
           - "/bin/sh"
           - "-c"
           - |
-            echo "Pausing for 30 seconds to allow database to fully initialize..."
-            sleep 30
             echo "Config file should be present. Starting exporter."
             /bin/mysqld_exporter \
               --config.my-cnf=/etc/mysql-exporter/my.cnf \
               --no-collect.info_schema.innodb_cmp \
               --no-collect.info_schema.innodb_cmpmem \
-              --no-collect.slave_status
+              --no-collect.slave_status \
+              --no-collect.global_variables
         ports:
         - name: metrics
           containerPort: 9104
