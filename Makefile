@@ -7,8 +7,8 @@ help:
 	@echo ""
 	@echo "Available targets:"
 	@echo "  deploy       - Deploy TAS baseline infrastructure"
-	@echo "  cleanup      - Remove ALL TAS resources and operators"
-	@echo "  cleanup-apps - Remove only TAS applications (keep operators)"
+	@echo "  clean        - Remove ALL TAS resources and operators"
+	@echo "  clean-apps   - Remove only TAS applications (keep operators)"
 	@echo "  check        - Verify prerequisites"
 	@echo "  status       - Show deployment status"
 	@echo "  logs         - Show recent logs"
@@ -28,8 +28,8 @@ deploy: check
 	chmod +x deploy-baseline.sh
 	./deploy-baseline.sh
 
-# Cleanup - remove all resources including operators
-cleanup:
+# Clean - remove all resources including operators
+clean:
 	@echo "Cleaning up TAS resources and operators..."
 	@echo " Removing application namespaces..."
 	oc delete namespace tas-monitoring --ignore-not-found=true
@@ -54,8 +54,8 @@ cleanup:
 		tufroots.rhtas.redhat.com
 	@echo "Complete cleanup finished"
 
-# Cleanup apps only (keep operators)
-cleanup-apps:
+# Clean apps only (keep operators)
+clean-apps:
 	@echo "Cleaning up TAS applications only..."
 	oc delete namespace tas-monitoring --ignore-not-found=true
 	@echo "Apps cleanup complete (operators preserved)"

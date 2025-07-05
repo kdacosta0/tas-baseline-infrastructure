@@ -68,8 +68,8 @@ The infrastructure includes the following main components:
 ## Available Make Commands
 
 - `make deploy` - Deploy TAS baseline infrastructure
-- `make cleanup` - Remove ALL TAS resources and operators
-- `make cleanup-apps` - Remove only TAS applications (keep operators)
+- `make clean` - Remove ALL TAS resources and operators
+- `make clean-apps` - Remove only TAS applications (keep operators)
 - `make check` - Verify prerequisites
 - `make status` - Show deployment status
 
