@@ -51,7 +51,7 @@ clean:
 		rekors.rhtas.redhat.com \
 		timestampauthorities.rhtas.redhat.com \
 		trillians.rhtas.redhat.com \
-		tufroots.rhtas.redhat.com
+		tufs.rhtas.redhat.com
 	@echo "Complete cleanup finished"
 
 # Clean apps only (keep operators)
