@@ -1230,11 +1230,6 @@ spec:
                           "expr": "sum(up{namespace=\"{{ baseline_namespace }}\"})",
                           "refId": "A",
                           "legendFormat": "Services Up"
-                      },
-                      {
-                          "expr": "count(up{namespace=\"{{ baseline_namespace }}\"})",
-                          "refId": "B",
-                          "legendFormat": "Total Services"
                       }
                   ],
                   "fieldConfig": {
@@ -1243,25 +1238,6 @@ spec:
                               "matcher": {
                                   "id": "byName",
                                   "options": "Services Up"
-                              },
-                              "properties": [
-                                  {
-                                      "id": "color",
-                                      "value": {
-                                          "mode": "fixed",
-                                          "fixedColor": "#33a02c"
-                                      }
-                                  },
-                                  {
-                                      "id": "textSize",
-                                      "value": 32
-                                  }
-                              ]
-                          },
-                          {
-                              "matcher": {
-                                  "id": "byName",
-                                  "options": "Total Services"
                               },
                               "properties": [
                                   {
