@@ -90,7 +90,7 @@ The infrastructure includes a comprehensive monitoring setup with Grafana dashbo
 
 ### Dashboard Overview
 
-![TAS Performance Dashboard](images/grafana-dashboard.png)
+![TAS Performance Dashboard]()
 *Figure 1: TAS Performance Dashboard showing key metrics and system health indicators*
 
 The monitoring stack includes:
