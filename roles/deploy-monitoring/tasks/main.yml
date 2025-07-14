@@ -30,6 +30,22 @@
     db_password: "{{ db_credentials.resources[0].data['mysql-password'] | b64decode }}"
   no_log: true
 
+- name: "Wait for Trillian database Pod to be ready"
+  k8s_info:
+    kind: Pod
+    namespace: "{{ baseline_namespace }}"
+    label_selectors:
+      - "app.kubernetes.io/component=trillian-db"
+  register: trillian_db_pod
+  retries: 40
+  delay: 15
+  until: >
+    trillian_db_pod.resources | length > 0 and
+    trillian_db_pod.resources[0].status.phase == "Running" and
+    (trillian_db_pod.resources[0].status.conditions |
+     selectattr('type', 'equalto', 'Ready') |
+     selectattr('status', 'equalto', 'True') | list | length > 0)
+
 - name: Deploy the Database Exporter Secret
   k8s:
     state: present

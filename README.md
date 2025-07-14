@@ -16,6 +16,7 @@ This repository contains the infrastructure code for deploying a standardized Tr
 
 The TAS Baseline Infrastructure provides a complete setup for:
 - Trusted Artifact Signer (TAS) components
+- Integrated Identity Management (Keycloak)
 - Monitoring and observability stack
 - Performance testing capabilities
 - Standardized resource configurations
@@ -39,7 +40,10 @@ The infrastructure includes the following main components:
    - TSA (Timestamp Authority)
    - TUF (The Update Framework)
 
-2. **Monitoring Stack**:
+2. **Identity Management**:
+   - Keycloak, deployed as a self-contained OIDC provider for authentication.
+
+3. **Monitoring Stack**:
    - Grafana for visualization
    - Prometheus integration
    - Custom dashboards for TAS performance KPIs
@@ -52,15 +56,7 @@ The infrastructure includes the following main components:
    cd tas-baseline-infrastructure
    ```
 
-2. Configure OIDC, in the [baseline-config.yml](baseline-config.yml) file:
-   ```bash
-   oidc:
-      issuer_url: "https://your-oidc-issuer-url"
-      client_id: "your_client_id"
-      type: "your_type"
-   ```
-
-3. Deploy the infrastructure:
+2. Deploy the infrastructure:
    ```bash
    make deploy
    ```
@@ -77,7 +73,7 @@ The infrastructure includes the following main components:
 
 The infrastructure can be configured through `baseline-config.yml`. Key configuration areas include:
 
-- OIDC settings (required)
+- OIDC settings (auto-configured by the integrated Keycloak instance)
 - Certificate configurations
 - Resource limits and requests
 - Component enablement

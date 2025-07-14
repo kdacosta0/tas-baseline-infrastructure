@@ -5,9 +5,6 @@
   connection: local
   gather_facts: true
   
-  vars_files:
-    - baseline-config.yml
-    
   vars:
     baseline_namespace: "{{ baseline.namespace }}"
     
@@ -15,11 +12,10 @@
     - name: "Display deployment overview"
       debug:
         msg:
-          - "TAS Baseline Infrastructure Deployment"
-          - "Target namespace: {{ baseline_namespace }}"
-          - "OIDC provider: {{ oidc.issuer_url }}"
-          - "Components: fulcio, rekor, trillian, ctlog, tsa"
-          - "Monitoring: Enabled for all components"
+          - "================================================================"
+          - "          TAS Baseline Infrastructure Deployment"
+          - "================================================================"
+          - " Target Namespace: {{ baseline_namespace }}"
           
     - name: "Record deployment info"
       set_fact:
@@ -32,6 +28,11 @@
         name: install-operators
       tags: ["operators", "setup"]
         
+    - name: "Deploy keycloak resources"
+      include_role:
+        name: deploy-keycloak-resources
+      tags: ["keycloak", "deploy"]
+
     - name: "Setup baseline namespace"
       include_role:
         name: setup-baseline-namespace

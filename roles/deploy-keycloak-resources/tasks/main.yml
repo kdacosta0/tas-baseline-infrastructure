@@ -1,0 +1,34 @@
+---
+- name: Build Kustomize output for Keycloak Resources
+  ansible.builtin.command: "oc kustomize {{ path_to_k8s_configs }}/keycloak/resources/overlay/kind/"
+  register: kustomize_resources_output
+  changed_when: false
+
+- name: Deploy Keycloak Resources from Kustomize output
+  k8s:
+    state: present
+    definition: "{{ kustomize_resources_output.stdout }}"
+
+- name: "Wait for Keycloak Route to become available"
+  k8s_info:
+    api_version: route.openshift.io/v1
+    kind: Route
+    name: keycloak
+    namespace: keycloak-system
+  register: keycloak_route_result
+  retries: 30
+  delay: 10
+  until: keycloak_route_result.resources | length > 0
+
+- name: Set dynamic Keycloak issuer URL as a fact
+  ansible.builtin.set_fact:
+    keycloak_issuer_url_dynamic: "https://{{ keycloak_route_result.resources[0].spec.host }}/auth/realms/trusted-artifact-signer"
+
+- name: "Verify that the Keycloak URL was successfully discovered"
+  ansible.builtin.fail:
+    msg: "Critical error: Failed to get the public URL for Keycloak from the Route object."
+  when: keycloak_issuer_url_dynamic is not defined or keycloak_issuer_url_dynamic | length == 0
+
+- name: Display the discovered URL for verification
+  ansible.builtin.debug:
+    msg: "Discovered Keycloak Issuer URL: {{ keycloak_issuer_url_dynamic }}"

@@ -1,0 +1,8 @@
+apiVersion: keycloak.org/v1alpha1
+kind: KeycloakRealm
+metadata:
+  name: trusted-artifact-signer
+spec:
+  realm:
+    sslRequired: none
+    accessTokenLifespan: 86400

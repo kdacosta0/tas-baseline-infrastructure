@@ -22,8 +22,8 @@ spec:
     config:
       OIDCIssuers:
       - ClientID: "{{ oidc.client_id }}"
-        Issuer: "{{ oidc.issuer_url }}"
-        IssuerURL: "{{ oidc.issuer_url }}"
+        Issuer: "{{ keycloak_issuer_url_dynamic }}"
+        IssuerURL: "{{ keycloak_issuer_url_dynamic }}"
         Type: "{{ oidc.type }}"
     certificate:
       commonName: "{{ certificates.fulcio.common_name }}"

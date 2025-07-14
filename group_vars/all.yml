@@ -7,10 +7,11 @@ baseline:
 # TODO: OIDC Configuration Analysis Required
 # - Evaluate impact of different OIDC providers on resource utilization
 oidc:
-  issuer_url: "https://your-oidc-issuer-url"
-  client_id: "your_client_id"
-  type: "your_type"
-  
+  client_id: "trusted-artifact-signer"
+  type: "email"
+
+path_to_k8s_configs: "{{ playbook_dir }}"
+
 certificates:
   organization_name: "Red Hat"
   organization_email: "jdoe@redhat.com"

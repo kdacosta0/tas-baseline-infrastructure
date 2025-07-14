@@ -31,15 +31,30 @@ deploy: check
 # Clean - remove all resources including operators
 clean:
 	@echo "Cleaning up TAS resources and operators..."
+
+	@echo " Deleting Keycloak resources..."
+	oc delete keycloakrealm trusted-artifact-signer -n keycloak-system --ignore-not-found=true --wait=true --timeout=2m
+	oc delete keycloakclient trusted-artifact-signer -n keycloak-system --ignore-not-found=true --wait=true --timeout=2m
+	oc delete keycloakuser jdoe -n keycloak-system --ignore-not-found=true --wait=true --timeout=2m
+	oc delete keycloak keycloak -n keycloak-system --ignore-not-found=true --wait=true --timeout=3m
+	
 	@echo " Removing application namespaces..."
-	oc delete namespace tas-monitoring --ignore-not-found=true
-	oc delete namespace trusted-artifact-signer --ignore-not-found=true
+	oc delete namespace tas-monitoring --ignore-not-found=true --timeout=3m
+	oc delete namespace trusted-artifact-signer --ignore-not-found=true --timeout=3m
+
+	@echo " Removing Keycloak operator..."
+	oc delete subscription keycloak-operator -n keycloak-system --ignore-not-found=true
+	oc delete csv -n keycloak-system -l operators.coreos.com/keycloak-operator.keycloak-system --ignore-not-found=true
 	@echo " Removing RHTAS operator..."
 	oc delete subscription rhtas-operator -n openshift-operators --ignore-not-found=true
 	oc delete csv -n openshift-operators -l operators.coreos.com/rhtas-operator.openshift-operators --ignore-not-found=true
 	@echo " Removing Grafana operator..."
 	oc delete subscription grafana-operator -n openshift-operators --ignore-not-found=true
 	oc delete csv -n openshift-operators -l operators.coreos.com/grafana-operator.openshift-operators --ignore-not-found=true
+
+	@echo " Removing Keycloak namespace..."
+	oc delete namespace keycloak-system --ignore-not-found=true --timeout=3m
+	
 	@echo " Cleaning up CRDs..."
 	oc delete crd --ignore-not-found=true \
 		grafanas.grafana.integreatly.org \
@@ -51,10 +66,24 @@ clean:
 		rekors.rhtas.redhat.com \
 		timestampauthorities.rhtas.redhat.com \
 		trillians.rhtas.redhat.com \
-		tufs.rhtas.redhat.com
+		tufs.rhtas.redhat.com \
+		keycloaks.keycloak.org \
+		keycloakrealms.keycloak.org \
+		keycloakclients.keycloak.org \
+		keycloakusers.keycloak.org \
+		keycloakbackups.keycloak.org
 	@echo "Complete cleanup finished"
 
-# Clean apps only (keep operators)
+force-clean:
+	@echo "Forcefully removing finalizers from Keycloak resources..."
+	oc patch keycloakrealm trusted-artifact-signer -n keycloak-system -p '{"metadata":{"finalizers":[]}}' --type=merge || true
+	oc patch keycloakclient trusted-artifact-signer -n keycloak-system -p '{"metadata":{"finalizers":[]}}' --type=merge || true
+	oc patch keycloakuser jdoe -n keycloak-system -p '{"metadata":{"finalizers":[]}}' --type=merge || true
+	oc patch keycloak keycloak -n keycloak-system -p '{"metadata":{"finalizers":[]}}' --type=merge || true
+	@echo "Finalizers removed. Now running standard clean..."
+	$(MAKE) clean
+
+
 clean-apps:
 	@echo "Cleaning up TAS applications only..."
 	oc delete namespace tas-monitoring --ignore-not-found=true
