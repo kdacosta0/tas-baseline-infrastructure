@@ -32,7 +32,7 @@ resources:
       cpu: "750m"
       memory: "768Mi"
     limits:
-      cpu: "3000m"
+      cpu: "4000m"
       memory: "1.5Gi"
   trillian_logsigner:
     requests:
@@ -43,8 +43,8 @@ resources:
       memory: "1Gi"
   trillian_database:
     requests:
-      cpu: "4000m"
-      memory: "2Gi"
+      cpu: "2000m"
+      memory: "1Gi"
     limits:
       cpu: "4000m"
       memory: "2Gi"
@@ -114,7 +114,7 @@ operators:
     name: "rhtas-operator"
     namespace: "openshift-operators"
     channel: "stable"
-    source: "redhat-operators"
+    source: "rhtas-operator"
     sourceNamespace: "openshift-marketplace"
     
   grafana:

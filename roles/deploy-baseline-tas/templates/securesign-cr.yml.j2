@@ -13,6 +13,13 @@ spec:
   ctlog:
     monitoring:
       enabled: {{ components.ctlog.monitoring_enabled }}
+    resources:
+      requests:
+        cpu: "{{ resources.ctlog.requests.cpu }}"
+        memory: "{{ resources.ctlog.requests.memory }}"
+      limits:
+        cpu: "{{ resources.ctlog.limits.cpu }}"
+        memory: "{{ resources.ctlog.limits.memory }}"
 
   fulcio:
     externalAccess:
@@ -29,13 +36,20 @@ spec:
       commonName: "{{ certificates.fulcio.common_name }}"
       organizationEmail: "{{ certificates.organization_email }}"
       organizationName: "{{ certificates.organization_name }}"
+    resources:
+      requests:
+        cpu: "{{ resources.fulcio.requests.cpu }}"
+        memory: "{{ resources.fulcio.requests.memory }}"
+      limits:
+        cpu: "{{ resources.fulcio.limits.cpu }}"
+        memory: "{{ resources.fulcio.limits.memory }}"
 
   rekor:
     externalAccess:
       enabled: {{ components.rekor.external_access }}
     monitoring:
       enabled: {{ components.rekor.monitoring_enabled }}
-
+        
   trillian:
     monitoring:
       enabled: {{ components.trillian.monitoring_enabled }}
@@ -46,6 +60,23 @@ spec:
           - ReadWriteOnce
         retain: true
         size: {{ storage.trillian_database_size }}
+    server:
+      resources:
+        requests:
+          cpu: "{{ resources.trillian_logserver.requests.cpu }}"
+          memory: "{{ resources.trillian_logserver.requests.memory }}"
+        limits:
+          cpu: "{{ resources.trillian_logserver.limits.cpu }}"
+          memory: "{{ resources.trillian_logserver.limits.memory }}"
+    signer:
+      resources:
+        requests:
+          cpu: "{{ resources.trillian_logsigner.requests.cpu }}"
+          memory: "{{ resources.trillian_logsigner.requests.memory }}"
+        limits:
+          cpu: "{{ resources.trillian_logsigner.limits.cpu }}"
+          memory: "{{ resources.trillian_logsigner.limits.memory }}"
+
 
   tsa:
     externalAccess:
@@ -68,6 +99,13 @@ spec:
           commonName: "{{ certificates.tsa.common_name }}"
           organizationEmail: "{{ certificates.organization_email }}"
           organizationName: "{{ certificates.organization_name }}"
+    resources:
+      requests:
+        cpu: "{{ resources.tsa.requests.cpu }}"
+        memory: "{{ resources.tsa.requests.memory }}"
+      limits:
+        cpu: "{{ resources.tsa.limits.cpu }}"
+        memory: "{{ resources.tsa.limits.memory }}"
 
   tuf:
     externalAccess:

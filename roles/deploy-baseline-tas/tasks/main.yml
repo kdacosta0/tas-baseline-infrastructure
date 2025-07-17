@@ -157,20 +157,10 @@
             cpu: "{{ item.resources.limits.cpu }}"
             memory: "{{ item.resources.limits.memory }}"
   loop:
-    - name: fulcio-server
-      resources: "{{ resources.fulcio }}"
     - name: rekor-server
       resources: "{{ resources.rekor }}"
-    - name: trillian-logserver
-      resources: "{{ resources.trillian_logserver }}"
-    - name: trillian-logsigner
-      resources: "{{ resources.trillian_logsigner }}"
     - name: trillian-db
       resources: "{{ resources.trillian_database }}"
-    - name: ctlog
-      resources: "{{ resources.ctlog }}"
-    - name: tsa-server
-      resources: "{{ resources.tsa }}"
   loop_control:
     label: "{{ item.name }}"
 
