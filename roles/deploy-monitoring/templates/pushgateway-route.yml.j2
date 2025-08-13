@@ -1,0 +1,14 @@
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: pushgateway
+  namespace: "{{ baseline_namespace }}"
+spec:
+  to:
+    kind: Service
+    name: pushgateway
+  port:
+    targetPort: http
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect

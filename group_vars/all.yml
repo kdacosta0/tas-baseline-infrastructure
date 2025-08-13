@@ -29,7 +29,7 @@ storage:
 resources:
   trillian_logserver:
     requests:
-      cpu: "750m"
+      cpu: "3000m"
       memory: "768Mi"
     limits:
       cpu: "4000m"
@@ -39,7 +39,7 @@ resources:
       cpu: "250m"
       memory: "256Mi"
     limits:
-      cpu: "1500m"
+      cpu: "500m"
       memory: "1Gi"
   trillian_database:
     requests:
@@ -50,7 +50,7 @@ resources:
       memory: "2Gi"
   rekor:
     requests:
-      cpu: "500m"
+      cpu: "1000m"
       memory: "512Mi"
     limits:
       cpu: "1500m"
@@ -144,3 +144,4 @@ monitoring:
     title: "TAS Performance Dashboard - KPIs"
     refresh_interval: "10s"
     time_range: "15m"
+    k6_job_name: "verifying_test|signing_test"

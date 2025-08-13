@@ -180,6 +180,16 @@
   loop_control:
     label: "{{ item.kind }}/{{ item.name }}"
 
+- name: "Deploy Prometheus Pushgateway for k6 metrics"
+  k8s:
+    state: present
+    definition: "{{ lookup('template', item) }}"
+  loop:
+    - 'pushgateway-deployment.yml.j2'
+    - 'pushgateway-service.yml.j2'
+    - 'pushgateway-servicemonitor.yml.j2'
+    - 'pushgateway-route.yml.j2'
+
 - name: "TAS monitoring deployment completed!"
   debug:
     msg:

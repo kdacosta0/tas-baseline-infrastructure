@@ -171,7 +171,7 @@ spec:
                           "legendFormat": "Log RPC - {% raw %}{{ job }}{% endraw %}"
                       },
                       {
-                          "expr": "sum by (job)(rate(http_reqs{namespace=\"{{ baseline_namespace }}\"}[2m]))",
+                          "expr": "sum by (job)(rate(http_reqs{namespace=\"{{ baseline_namespace }}\", job!=\"pushgateway\"}[2m]))",
                           "refId": "E",
                           "legendFormat": "CTLog Requests - {% raw %}{{ job }}{% endraw %}"
                       },
@@ -343,7 +343,7 @@ spec:
                   "description": "CPU utilization per TAS component in millicores",
                   "targets": [
                       {
-                          "expr": "sum by (job)(rate(process_cpu_seconds_total{namespace=\"{{ baseline_namespace }}\", job!=\"trillian-db-exporter-metrics\"}[2m])) * 1000",
+                          "expr": "sum by (job)(rate(process_cpu_seconds_total{namespace=\"{{ baseline_namespace }}\", job!=\"trillian-db-exporter-metrics\", job!=\"pushgateway\"}[2m])) * 1000",
                           "refId": "A",
                           "legendFormat": "{% raw %}{{ job }}{% endraw %}"
                       }
@@ -481,7 +481,7 @@ spec:
                   "description": "Actual memory consumption in MB",
                   "targets": [
                       {
-                          "expr": "sum by (job)(process_resident_memory_bytes{namespace=\"{{ baseline_namespace }}\", job!=\"trillian-db-exporter-metrics\"}) / 1024 / 1024",
+                          "expr": "sum by (job)(process_resident_memory_bytes{namespace=\"{{ baseline_namespace }}\", job!=\"trillian-db-exporter-metrics\", job!=\"pushgateway\"}) / 1024 / 1024",
                           "refId": "A",
                           "legendFormat": "{% raw %}{{ job }}{% endraw %}"
                       }
@@ -916,6 +916,8 @@ spec:
                           "displayMode": "table",
                           "placement": "bottom",
                           "calcs": [
+                              "max",
+                              "mean",
                               "lastNotNull"
                           ],
                           "fontSize": 13
@@ -996,6 +998,8 @@ spec:
                           "displayMode": "table",
                           "placement": "bottom",
                           "calcs": [
+                              "max",
+                              "mean",
                               "lastNotNull"
                           ],
                           "fontSize": 13
@@ -1059,6 +1063,8 @@ spec:
                           "displayMode": "table",
                           "placement": "bottom",
                           "calcs": [
+                              "max",
+                              "mean",
                               "lastNotNull"
                           ],
                           "fontSize": 13
@@ -1267,6 +1273,140 @@ spec:
                       "x": 0,
                       "y": 48
                   }
+              },
+              {
+                  "id": 20,
+                  "type": "row",
+                  "title": "k6 Performance Test Metrics",
+                  "gridPos": { "h": 1, "w": 24, "x": 0, "y": 54 }
+              },
+              {
+                  "id": 21,
+                  "title": "k6 Virtual Users (VUs)",
+                  "type": "timeseries",
+                  "targets": [
+                      {
+                          "expr": "sum by (exported_job)(vus{exported_job=~\"{{ monitoring.dashboard.k6_job_name }}\"})",
+                          "refId": "A",
+                          "legendFormat": "{% raw %}{{ exported_job }}{% endraw %}"
+                      }
+                  ],
+                  "fieldConfig": { "defaults": { "unit": "short", "min": 0, "custom": { "lineWidth": 2, "drawStyle": "line", "color": { "mode": "fixed", "fixedColor": "light-blue" } } } },
+                  "options": {
+                      "tooltip": {
+                          "mode": "multi",
+                          "sort": "desc",
+                          "shared": true
+                      },
+                      "legend": {
+                          "displayMode": "table",
+                          "placement": "bottom",
+                          "calcs": [
+                              "max",
+                              "mean",
+                              "lastNotNull"
+                          ],
+                          "showLegend": true,
+                          "fontSize": 13
+                      }
+                  },
+                  "gridPos": { "h": 8, "w": 6, "x": 0, "y": 55 }
+              },
+              {
+                  "id": 22,
+                  "title": "k6 Throughput (RPS)",
+                  "type": "timeseries",
+                  "targets": [
+                      {
+                          "expr": "sum by (exported_job)(http_reqs{exported_job=~\"{{ monitoring.dashboard.k6_job_name }}\"})",
+                          "refId": "A",
+                          "legendFormat": "{% raw %}{{ exported_job }}{% endraw %}"
+                      }
+                  ],
+                  "fieldConfig": { "defaults": { "unit": "short", "min": 0, "custom": { "lineWidth": 2, "drawStyle": "line", "color": { "mode": "fixed", "fixedColor": "light-green" } } } },
+                  "options": {
+                      "tooltip": {
+                          "mode": "multi",
+                          "sort": "desc",
+                          "shared": true
+                      },
+                      "legend": {
+                          "displayMode": "table",
+                          "placement": "bottom",
+                          "calcs": [
+                              "max",
+                              "mean",
+                              "lastNotNull"
+                          ],
+                          "showLegend": true,
+                          "fontSize": 13
+                      }
+                  },
+                  "gridPos": { "h": 8, "w": 6, "x": 6, "y": 55 }
+              },
+              {
+                  "id": 23,
+                  "title": "k6 P95 Latency",
+                  "type": "timeseries",
+                  "targets": [
+                      {
+                          "expr": "sum by (exported_job)(http_req_duration_p95{exported_job=~\"{{ monitoring.dashboard.k6_job_name }}\"})",
+                          "refId": "A",
+                          "legendFormat": "{% raw %}{{ exported_job }}{% endraw %}"
+                      }
+                  ],
+                  "fieldConfig": { "defaults": { "unit": "short", "min": 0, "custom": { "lineWidth": 2, "drawStyle": "line", "color": { "mode": "fixed", "fixedColor": "orange" } } } },
+                  "options": {
+                      "tooltip": {
+                          "mode": "multi",
+                          "sort": "desc",
+                          "shared": true
+                      },
+                      "legend": {
+                          "displayMode": "table",
+                          "placement": "bottom",
+                          "calcs": [
+                              "max",
+                              "mean",
+                              "lastNotNull"
+                          ],
+                          "showLegend": true,
+                          "fontSize": 13
+                      }
+                  },
+                  "gridPos": { "h": 8, "w": 6, "x": 12, "y": 55 }
+              },
+              {
+                  "id": 24,
+                  "title": "k6 Error Rate",
+                  "type": "timeseries",
+                  "targets": [
+                      {
+                          "expr": "sum by (exported_job)(application_errors_total{exported_job=~\"{{ monitoring.dashboard.k6_job_name }}\"})",
+                          "refId": "A",
+                          "legendFormat": "{% raw %}{{ exported_job }}{% endraw %}"
+                      }
+                  ],
+                  "fieldConfig": { "defaults": { "unit": "short", "min": 0, "custom": { "lineWidth": 2, "drawStyle": "line", "color": { "mode": "fixed", "fixedColor": "red" } } } },
+                  "options": {
+                      "tooltip": {
+                          "mode": "multi",
+                          "sort": "desc",
+                          "shared": true
+                      },
+                      "legend": {
+                          "displayMode": "table",
+                          "placement": "bottom",
+                          "calcs": [
+                              "max",
+                              "mean",
+                              "lastNotNull"
+                          ],
+                          "showLegend": true,
+                          "fontSize": 13
+                      }
+                  },
+                  "gridPos": { "h": 8, "w": 6, "x": 18, "y": 55 }
               }
           ]
       }

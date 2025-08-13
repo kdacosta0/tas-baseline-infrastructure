@@ -67,6 +67,7 @@ clean:
 		timestampauthorities.rhtas.redhat.com \
 		trillians.rhtas.redhat.com \
 		tufs.rhtas.redhat.com \
+		tas.rhtas.redhat.com \
 		keycloaks.keycloak.org \
 		keycloakrealms.keycloak.org \
 		keycloakclients.keycloak.org \
