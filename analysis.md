@@ -145,12 +145,16 @@ This report concludes with final recommendations for deploying in production env
 
 **Recommendations:**
 
-1.  **For Production Deployment (Performance Profile):** For production environments, it is essential to apply the fully optimized profile. This includes both robust `resources` allocation and `affinity` rules for co-locating key components. The following `resources` block is recommended as a starting point:
+1.  **Configuration for Higher Performance:** To achieve higher throughput and lower latency, it is essential to apply an optimized profile. This includes both robust `resources` allocation and `affinity` rules for co-locating key components.
+
+The following `resources` block reflects the configuration used to achieve the **~1.29K RPS** benchmark in our specific test environment. It is provided as a recommended starting point for performance tuning. Users should monitor their own application's resource consumption and adjust these values based on their specific cluster size and workload characteristics.
+
+
     ```yaml
     resources:
       trillian_database:
         requests: { cpu: "2000m", memory: "1Gi" }
-        limits:   { cpu: "4500m", memory: "4Gi" }
+        limits:   { cpu: "4500m", memory: "2Gi" }
       trillian_logserver:
         requests: { cpu: "2000m", memory: "128Mi" }
         limits:   { cpu: "4500m", memory: "512Mi" }
@@ -171,6 +175,3 @@ This report concludes with final recommendations for deploying in production env
         limits:   { cpu: "500m", memory: "256Mi" }
     ```
 
-2.  **For High Availability (HA):** Deploying with 3 replicas is recommended for resilience against node failure. However, customers must be informed that due to the gRPC issue, this primarily provides **resilience**, not a 3x performance increase.
-
-3.  **For the Development Team (Critical):** It is strongly recommended to investigate changing the internal gRPC client-side load balancing policy to **`round_robin`**. This is the only way to unlock true horizontal scalability and fully utilize the resources allocated in an HA deployment.
