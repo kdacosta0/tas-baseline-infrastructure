@@ -150,7 +150,7 @@ This report concludes with final recommendations for deploying in production env
 The following `resources` block reflects the configuration used to achieve the **~1.29K RPS** benchmark in our specific test environment. It is provided as a recommended starting point for performance tuning. Users should monitor their own application's resource consumption and adjust these values based on their specific cluster size and workload characteristics.
 
 
-    ```yaml
+```yaml
     resources:
       trillian_database:
         requests: { cpu: "2000m", memory: "1Gi" }
@@ -173,5 +173,5 @@ The following `resources` block reflects the configuration used to achieve the *
       tsa:
         requests: { cpu: "100m", memory: "128Mi" }
         limits:   { cpu: "500m", memory: "256Mi" }
-    ```
+```
 
