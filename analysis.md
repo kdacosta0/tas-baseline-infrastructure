@@ -1,8 +1,8 @@
 # Performance Analysis Report: Red Hat Trusted Artifact Signer (RHTAS)
 
-**Author:** Kristián Da Costa Menezes
-**Date:** September 11, 2025
-**Version:** 1.0
+**Author:** Kristián Da Costa Menezes  
+**Date:** September 11, 2025  
+**Version:** 1.0  
 
 ### **1. Executive Summary**
 
