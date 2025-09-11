@@ -1,99 +1,112 @@
-# TAS Baseline Infrastructure
+# RHTAS Performance Analysis Infrastructure
 
-This repository contains the infrastructure code for deploying a standardized Trusted Artifact Signer (TAS) baseline environment on OpenShift. The infrastructure is designed to be easily deployable and configurable for performance testing and monitoring.
+This repository contains a comprehensive suite of tools for deploying and conducting performance analysis on the Red Hat Trusted Artifact Signer (RHTAS) stack. The primary goal is to provide a standardized, automated, and repeatable method for benchmarking system performance under various workloads.
+
+The key deliverable of this project is a detailed **[Performance Analysis Report](analysis.md)**, which establishes clear performance metrics, identifies system bottlenecks, and provides data-driven recommendations.
 
 ## Table of Contents
+
 - [Overview](#overview)
 - [Prerequisites](#prerequisites)
-- [Components](#components)
-- [Quick Start](#quick-start)
+- [How to Use (Quick Start)](#how-to-use-quick-start)
 - [Available `make` Commands](#available-make-commands)
-- [Configuration](#configuration)
-- [Monitoring](#monitoring)
+- [Configuration Profiles](#configuration-profiles)
+- [Performance Report & Data](#performance-report--data)
 - [License](#license)
 
 ## Overview
 
-The TAS Baseline Infrastructure provides a complete setup for:
-- Trusted Artifact Signer (TAS) components
-- Integrated Identity Management (Keycloak)
-- Monitoring and observability stack
-- Performance testing capabilities
-- Standardized resource configurations
+This infrastructure provides a complete, automated setup for:
+- Deploying RHTAS components in different configurations.
+- Running various performance test scenarios (`sign`, `verify`).
+- Collecting performance metrics (RPS, Latency, CPU/Memory).
+- Analyzing results to provide clear, actionable recommendations.
 
 ## Prerequisites
 
-- OpenShift cluster access
-- `oc` CLI tool installed
-- Ansible installed
-- Python 3.x
+- OpenShift cluster access (`oc` CLI tool installed and logged in).
+- Ansible and required Python dependencies (the `deploy.sh` script will set up a virtual environment automatically).
 
-## Components
+## How to Use (Quick Start)
 
-The infrastructure includes the following main components:
+#### Step 1: Deploy the Infrastructure
+Choose one of the two available configuration profiles to deploy.
+```
+    # Deploy the baseline configuration
+    make deploy-baseline
 
-1. **Core TAS Components**:
-   - Fulcio (Certificate Authority)
-   - Rekor (Transparency Log)
-   - Trillian (Backend Database)
-   - CTLog (Certificate Transparency Log)
-   - TSA (Timestamp Authority)
-   - TUF (The Update Framework)
+    # OR
 
-2. **Identity Management**:
-   - Keycloak, deployed as a self-contained OIDC provider for authentication.
+    # Deploy the optimized configuration (with high resources & affinity)
+    make deploy-optimized
+```
 
-3. **Monitoring Stack**:
-   - Grafana for visualization
-   - Prometheus integration
-   - Custom dashboards for TAS performance KPIs
+#### Step 2: Run a Performance Test
+Execute one of the predefined test scenarios. For example, to run the `signing` test with a realistic production load:
+```
+    # Run the signing test with 100 Virtual Users
+    make sign-optimal-range
+```
 
-## Quick Start
+#### Step 3: Clean Up
+After testing is complete, remove the deployed resources.
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/kdacosta0/tas-baseline-infrastructure.git
-   cd tas-baseline-infrastructure
-   ```
+```
+    # Remove only the test jobs and RHTAS applications
+    make clean-apps
 
-2. Deploy the infrastructure:
-   ```bash
-   make deploy
-   ```
+    # OR
 
-## Available Make Commands
+    # WARNING: This removes everything, including operators
+    make clean
+```
 
-- `make deploy` - Deploy TAS baseline infrastructure
-- `make clean` - Remove ALL TAS resources and operators
-- `make clean-apps` - Remove only TAS applications (keep operators)
-- `make check` - Verify prerequisites
-- `make status` - Show deployment status
+## Available `make` Commands
 
-## Configuration
+#### Infrastructure Management
+- `deploy` or `deploy-baseline`: Deploys the baseline RHTAS configuration.
+- `deploy-optimized`: Deploys the high-performance, optimized RHTAS configuration.
+- `clean-apps`: Deletes the `Securesign` CR and test-related namespaces.
+- `clean`: Deletes everything, including operators, CRDs, and all related namespaces.
 
-The infrastructure can be configured through `baseline-config.yml`. Key configuration areas include:
+#### Performance Tests
+A variety of pre-configured tests are available for both `sign` and `verify` workloads.
 
-- OIDC settings (auto-configured by the integrated Keycloak instance)
-- Certificate configurations
-- Resource limits and requests
-- Component enablement
-- Monitoring settings
-- Storage configurations
+* **Signing Tests:**
+    * `make sign-smoke`: A simple 1 VU, 1 iteration test.
+    * `make sign-load`: A light load test with 20 VUs.
+    * `make sign-optimal-range`: A realistic production load test with 100 VUs.
+    * `make sign-stress`: A high-load stress test.
+    * `make sign-fill`: A utility to pre-seed the database with 10,000 entries.
 
-## Monitoring
+* **Verifying Tests:**
+    * `make generate-verify-data`: Generates a UUID needed for verification tests.
+    * `make verify-smoke`: A simple 1 VU, 1 iteration test.
+    * `make verify-load`: A light load test with 80 VUs.
+    * `make verify-optimal-range`: A realistic production load test with 100 VUs.
+    * `make verify-stress`: A high-load stress test.
 
-The infrastructure includes a comprehensive monitoring setup with Grafana dashboards that provide real-time insights into TAS performance and health metrics.
+#### Utility Commands
+- `check`: Verifies that all prerequisites are met.
+- `status`: Shows the deployment status of key RHTAS components.
 
-### Dashboard Overview
+## Configuration Profiles
 
-![TAS Performance Dashboard]()
-*Figure 1: TAS Performance Dashboard showing key metrics and system health indicators*
+This suite uses two primary configurations to compare performance:
 
-The monitoring stack includes:
-- Grafana dashboards for performance KPIs
-- Prometheus integration
-- Custom metrics collection
-- Resource utilization tracking
+1.  **Baseline Configuration (`deploy-baseline`)**
+    This profile uses a single replica for all services, with high `resources` allocated only to the `trillian-db` component and no specific `affinity` rules. It serves as a benchmark for "out-of-the-box" performance.
+
+2.  **Optimized Configuration (`deploy-optimized`)**
+    This profile is designed for high performance. It uses robust `resources` for all key components and applies `nodeAffinity` rules to strategically co-locate services, minimizing network latency and resource contention.
+
+## Performance Report & Data
+
+The main output of this project is the comprehensive analysis report, which contains all methodologies, results, and recommendations.
+
+- Report: [Performance Analysis Report (analysis.md)](analysis.md)**
+
+All raw data (CSV files exported from Grafana) from the benchmark runs are archived in the `/results` directory for full transparency and reproducibility.
 
 ## License
 
