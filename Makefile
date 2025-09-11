@@ -1,6 +1,12 @@
 # TAS Baseline Infrastructure Makefile
 
-.PHONY: help deploy cleanup cleanup-apps check logs status
+SIGN_JOB_NAME   := signing
+VERIFY_JOB_NAME := verifying
+SIGN_SCRIPT     := tas-perf-sign-template.js
+VERIFY_SCRIPT   := tas-perf-verify-template.js
+
+
+.PHONY: help deploy cleanup cleanup-apps check logs status sign-smoke sign-load sign-stress verify-smoke verify-load
 
 help:
 	@echo "TAS Baseline Infrastructure"
@@ -22,11 +28,18 @@ check:
 	@oc cluster-info >/dev/null 2>&1 || (echo "Cannot connect to cluster" && exit 1)
 	@echo "Prerequisites OK"
 
-# Deploy TAS baseline infrastructure
-deploy: check
+# Deploy TAS infrastructure
+deploy: deploy-baseline
+
+deploy-baseline:
 	@echo "Deploying TAS baseline infrastructure..."
-	chmod +x deploy-baseline.sh
-	./deploy-baseline.sh
+	@chmod +x deploy.sh
+	@./deploy.sh baseline
+
+deploy-optimized:
+	@echo "Deploying TAS optimized infrastructure..."
+	@chmod +x deploy.sh
+	@./deploy.sh optimized
 
 # Clean - remove all resources including operators
 clean:
@@ -40,6 +53,7 @@ clean:
 	
 	@echo " Removing application namespaces..."
 	oc delete namespace tas-monitoring --ignore-not-found=true --timeout=3m
+	oc delete namespace k6-tests --ignore-not-found=true --timeout=3m
 	oc delete namespace trusted-artifact-signer --ignore-not-found=true --timeout=3m
 
 	@echo " Removing Keycloak operator..."
@@ -67,13 +81,13 @@ clean:
 		timestampauthorities.rhtas.redhat.com \
 		trillians.rhtas.redhat.com \
 		tufs.rhtas.redhat.com \
-		tas.rhtas.redhat.com \
 		keycloaks.keycloak.org \
 		keycloakrealms.keycloak.org \
 		keycloakclients.keycloak.org \
 		keycloakusers.keycloak.org \
 		keycloakbackups.keycloak.org
 	@echo "Complete cleanup finished"
+	@$(MAKE) clean-labels
 
 force-clean:
 	@echo "Forcefully removing finalizers from Keycloak resources..."
@@ -90,6 +104,15 @@ clean-apps:
 	oc delete namespace tas-monitoring --ignore-not-found=true
 	@echo "Apps cleanup complete (operators preserved)"
 
+clean-labels:
+	@echo "INFO: To remove performance labels from worker nodes, run the following commands manually:"
+	@for node in $$(oc get nodes -l performance-zone=database -o name); do \
+		echo "  oc label $$node performance-zone-"; \
+	done
+	@for node in $$(oc get nodes -l performance-zone=application -o name); do \
+		echo "  oc label $$node performance-zone-"; \
+	done
+
 # Show deployment status
 status:
 	@echo "TAS Deployment Status:"
@@ -102,3 +125,85 @@ status:
 	@echo ""
 	@echo "Pods:"
 	@oc get pods -n tas-monitoring 2>/dev/null || echo "  No pods in tas-monitoring"
+
+sign-smoke:
+	@./run-test.sh \
+		-e "k6_args='--vus 1 --iterations 1'" \
+		-e "k6_job_name=$(SIGN_JOB_NAME)" \
+		-e "k6_script_to_run=$(SIGN_SCRIPT)"
+
+sign-fill:
+	@./run-test.sh \
+		-e "k6_args='--iterations 10000 --vus 50'" \
+		-e "k6_job_name=$(SIGN_JOB_NAME)" \
+		-e "k6_script_to_run=$(SIGN_SCRIPT)"
+
+sign-load:
+	@./run-test.sh \
+		-e "k6_args='--stage 30s:20 --stage 5m:20 --stage 30s:0'" \
+		-e "k6_job_name=$(SIGN_JOB_NAME)" \
+		-e "k6_script_to_run=$(SIGN_SCRIPT)"
+
+sign-stress:
+	@./run-test.sh \
+		-e "k6_args='--stage 5m:300'" \
+		-e "k6_job_name=$(SIGN_JOB_NAME)" \
+		-e "k6_script_to_run=$(SIGN_SCRIPT)"
+
+sign-optimal-range:
+	@echo "INFO: Running a focused test on the optimal 100 VU range..."
+	@./run-test.sh \
+		-e "k6_args='--stage 30s:100 --stage 5m:100 --stage 30s:0'" \
+		-e "k6_job_name=$(SIGN_JOB_NAME)" \
+		-e "k6_script_to_run=$(SIGN_SCRIPT)"
+
+generate-verify-data:
+	@echo "INFO: Running sign-smoke in data generation mode..."
+	@OUTPUT=$$(./run-test.sh \
+		-e "k6_args='--vus 1 --iterations 1'" \
+		-e "k6_job_name=$(SIGN_JOB_NAME)" \
+		-e "k6_script_to_run=$(SIGN_SCRIPT)" \
+		-e "generate_data_mode=true" \
+	); \
+	echo "Full log output:"; \
+	echo "$$OUTPUT"; \
+	REKOR_UUID=$$(echo "$$OUTPUT" | grep 'REKOR_ENTRY_UUID' | sed -E 's/.*REKOR_ENTRY_UUID:([0-9a-f]+).*/\1/'); \
+	if [ -n "$$REKOR_UUID" ]; then \
+		echo "export UUID=$$REKOR_UUID\nmake verify-smoke"; \
+	else \
+		echo "ERROR: Could not extract UUID"; \
+	fi
+
+verify-smoke:
+	@echo "INFO: Running verify-smoke test..."
+	@./run-test.sh \
+		-e "k6_args='--vus 1 --iterations 1'" \
+		-e "k6_job_name=$(VERIFY_JOB_NAME)" \
+		-e "k6_script_to_run=$(VERIFY_SCRIPT)" \
+		-e "rekor_uuids=$(UUID)"
+
+verify-load:
+	@echo "INFO: Running verify-load test..."
+	@./run-test.sh \
+		-e "k6_args='--stage 30s:80 --stage 5m:80 --stage 30s:0'" \
+		-e "k6_job_name=$(VERIFY_JOB_NAME)" \
+		-e "k6_script_to_run=$(VERIFY_SCRIPT)" \
+		-e "rekor_uuids=$(UUID)"
+
+verify-stress:
+	@echo "INFO: Running verify-stress test..."
+	@./run-test.sh \
+		-e "k6_args='--stage 5m:300'" \
+		-e "k6_job_name=$(VERIFY_JOB_NAME)" \
+		-e "k6_script_to_run=$(VERIFY_SCRIPT)" \
+		-e "rekor_uuids=$(UUID)"
+
+verify-optimal-range:
+	@echo "INFO: Running a focused test on the optimal VU range..."
+	@./run-test.sh \
+		-e "k6_args='--stage 30s:100 --stage 5m:100 --stage 30s:0'" \
+		-e "k6_job_name=$(VERIFY_JOB_NAME)" \
+		-e "k6_script_to_run=$(VERIFY_SCRIPT)" \
+		-e "rekor_uuids=$(UUID)"
+
+

@@ -1,0 +1,95 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: k6-performance-test-job
+  labels:
+    k6-test-runner: "true"
+spec:
+  template:
+    spec:
+      serviceAccountName: default
+      restartPolicy: Never
+      volumes:
+      - name: k6-script-volume
+        configMap:
+          name: "k6-test-script"
+      
+      containers:
+      containers:
+      - name: go-crypto-helper-sign
+        image: "quay.io/rh_ee_kdacosta/go-crypto-helper:go_error_counter-2"
+        ports:
+        - containerPort: 8080
+        env:
+        - name: K6_JOB_NAME
+          value: "{{ k6_job_name_sign }}"
+
+      - name: go-crypto-helper-verify
+        image: "quay.io/rh_ee_kdacosta/go-crypto-helper:go_error_counter-2"
+        ports:
+        - containerPort: 8081 
+        env:
+        - name: K6_JOB_NAME
+          value: "{{ k6_job_name_verify }}"
+        - name: K6_PUSHGATEWAY_URL
+          value: "{{ dynamic_pushgateway_url }}"
+        - name: TSA_URL
+          value: "{{ dynamic_tsa_url }}/api/v1/timestamp"
+
+
+      - name: signing-container
+        image: "quay.io/rh_ee_kdacosta/k6:pgw-latest"
+        command:
+        - "/bin/sh"
+        - "-c"
+        - "sleep 5; k6 run /test/{{ k6_script_to_run_sign }} --out output-prometheus-pushgateway {{ k6_args_sign }}"
+        
+        env:
+        - name: K6_PUSHGATEWAY_URL
+          value: "{{ dynamic_pushgateway_url }}"
+        - name: K6_JOB_NAME
+          value: "{{ k6_job_name_sign }}"
+        - name: OIDC_ISSUER_URL
+          value: "{{ dynamic_oidc_issuer_url }}"
+        - name: OIDC_USER
+          value: "jdoe"
+        - name: OIDC_PASSWORD
+          value: "secure"
+        - name: OIDC_CLIENT_ID
+          value: "trusted-artifact-signer"
+        - name: FULCIO_URL
+          value: "{{ dynamic_fulcio_url }}"
+        - name: REKOR_URL
+          value: "{{ dynamic_rekor_url }}"
+        - name: TSA_URL
+          value: "{{ dynamic_tsa_url }}/api/v1/timestamp"
+
+        {{ additional_env_vars | indent(8, first=true) }}
+
+        volumeMounts:
+        - name: k6-script-volume
+          mountPath: /test
+
+      - name: verifying-container
+        image: "quay.io/rh_ee_kdacosta/k6:pgw-latest"
+        command:
+        - "/bin/sh"
+        - "-c"
+        - "sleep 5; k6 run /test/{{ k6_script_to_run_verify }} --out output-prometheus-pushgateway {{ k6_args_verify }}"
+        env:
+        - name: K6_PUSHGATEWAY_URL
+          value: "{{ dynamic_pushgateway_url }}"
+        - name: K6_JOB_NAME
+          value: "{{ k6_job_name_verify }}"
+        - name: REKOR_URL
+          value: "{{ dynamic_rekor_url }}"
+        - name: TSA_URL
+          value: "{{ dynamic_tsa_url }}/api/v1/timestamp"
+
+        {{ additional_env_vars | indent(8, first=true) }}
+
+        volumeMounts:
+        - name: k6-script-volume
+          mountPath: /test
+    
+  backoffLimit: 1

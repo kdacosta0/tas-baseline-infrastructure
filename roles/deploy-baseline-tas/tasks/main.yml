@@ -1,10 +1,8 @@
-# Deploy TAS Securesign with all monitoring enabled (Real Production Template)
-# roles/tas_deploy/tasks/main.yml
 ---
-- name: "Deploy baseline TAS Securesign instance"
+- name: "Deploying Securesign CR from template: {{ template_to_deploy }}"
   k8s:
     state: present
-    definition: "{{ lookup('template', 'securesign-cr.yml.j2') }}"
+    definition: "{{ lookup('template', template_to_deploy) }}"
 
 - name: "Display TAS deployment status"
   debug:
@@ -13,157 +11,68 @@
       - "Instance: {{ baseline.instance_name }}"
       - "Namespace: {{ baseline_namespace }}"
 
-# Check each TAS component readiness
-- name: "Check Trillian component readiness"
-  k8s_info:
+- name: "Check all TAS components for readiness"
+  kubernetes.core.k8s_info:
     api_version: rhtas.redhat.com/v1alpha1
-    kind: Trillian
+    kind: "{{ item }}"
     name: "{{ baseline.instance_name }}"
     namespace: "{{ baseline_namespace }}"
-  register: trillian_status
+  register: component_status
   retries: 30
   delay: 10
   until: >
-    trillian_status.resources is defined and 
-    trillian_status.resources | length > 0 and
-    trillian_status.resources[0].status is defined and
-    trillian_status.resources[0].status.conditions is defined and
-    (trillian_status.resources[0].status.conditions | 
-     selectattr('type', 'equalto', 'Ready') | 
+    component_status.resources | length > 0 and
+    (component_status.resources[0].status.conditions |
+     selectattr('type', 'equalto', 'Ready') |
      selectattr('status', 'equalto', 'True') | list | length > 0)
-
-- name: "Check Fulcio component readiness"
-  k8s_info:
-    api_version: rhtas.redhat.com/v1alpha1
-    kind: Fulcio
-    name: "{{ baseline.instance_name }}"
-    namespace: "{{ baseline_namespace }}"
-  register: fulcio_status
-  retries: 30
-  delay: 10
-  until: >
-    fulcio_status.resources is defined and
-    fulcio_status.resources | length > 0 and
-    fulcio_status.resources[0].status is defined and
-    fulcio_status.resources[0].status.conditions is defined and
-    (fulcio_status.resources[0].status.conditions | 
-     selectattr('type', 'equalto', 'Ready') | 
-     selectattr('status', 'equalto', 'True') | list | length > 0)
-
-- name: "Check Rekor component readiness"
-  k8s_info:
-    api_version: rhtas.redhat.com/v1alpha1
-    kind: Rekor
-    name: "{{ baseline.instance_name }}"
-    namespace: "{{ baseline_namespace }}"
-  register: rekor_status
-  retries: 30
-  delay: 10
-  until: >
-    rekor_status.resources is defined and
-    rekor_status.resources | length > 0 and
-    rekor_status.resources[0].status is defined and
-    rekor_status.resources[0].status.conditions is defined and
-    (rekor_status.resources[0].status.conditions | 
-     selectattr('type', 'equalto', 'Ready') | 
-     selectattr('status', 'equalto', 'True') | list | length > 0)
-
-- name: "Check CTlog component readiness"
-  k8s_info:
-    api_version: rhtas.redhat.com/v1alpha1
-    kind: CTlog
-    name: "{{ baseline.instance_name }}"
-    namespace: "{{ baseline_namespace }}"
-  register: ctlog_status
-  retries: 30
-  delay: 10
-  until: >
-    ctlog_status.resources is defined and
-    ctlog_status.resources | length > 0 and
-    ctlog_status.resources[0].status is defined and
-    ctlog_status.resources[0].status.conditions is defined and
-    (ctlog_status.resources[0].status.conditions | 
-     selectattr('type', 'equalto', 'Ready') | 
-     selectattr('status', 'equalto', 'True') | list | length > 0)
-
-- name: "Check TimestampAuthority component readiness"
-  k8s_info:
-    api_version: rhtas.redhat.com/v1alpha1
-    kind: TimestampAuthority
-    name: "{{ baseline.instance_name }}"
-    namespace: "{{ baseline_namespace }}"
-  register: tsa_status
-  retries: 30
-  delay: 10
-  until: >
-    tsa_status.resources is defined and
-    tsa_status.resources | length > 0 and
-    tsa_status.resources[0].status is defined and
-    tsa_status.resources[0].status.conditions is defined and
-    (tsa_status.resources[0].status.conditions | 
-     selectattr('type', 'equalto', 'Ready') | 
-     selectattr('status', 'equalto', 'True') | list | length > 0)
-
-- name: "Check Tuf component readiness"
-  k8s_info:
-    api_version: rhtas.redhat.com/v1alpha1
-    kind: Tuf
-    name: "{{ baseline.instance_name }}"
-    namespace: "{{ baseline_namespace }}"
-  register: tuf_status
-  retries: 30
-  delay: 10
-  until: >
-    tuf_status.resources is defined and
-    tuf_status.resources | length > 0 and
-    tuf_status.resources[0].status is defined and
-    tuf_status.resources[0].status.conditions is defined and
-    (tuf_status.resources[0].status.conditions | 
-     selectattr('type', 'equalto', 'Ready') | 
-     selectattr('status', 'equalto', 'True') | list | length > 0)
-
-- name: "Check SecureSign component readiness"
-  k8s_info:
-    api_version: rhtas.redhat.com/v1alpha1
-    kind: Securesign
-    name: "{{ baseline.instance_name }}"
-    namespace: "{{ baseline_namespace }}"
-  register: securesign_status
-  retries: 30
-  delay: 10
-  until: >
-    securesign_status.resources is defined and
-    securesign_status.resources | length > 0 and
-    securesign_status.resources[0].status is defined and
-    securesign_status.resources[0].status.conditions is defined and
-    (securesign_status.resources[0].status.conditions | 
-     selectattr('type', 'equalto', 'Ready') | 
-     selectattr('status', 'equalto', 'True') | list | length > 0)
+  loop:
+    - Trillian
+    - Fulcio
+    - Rekor
+    - CTlog
+    - TimestampAuthority
+    - Tuf
+    - Securesign
+  loop_control:
+    label: "Waiting for {{ item }}"
 
 
-- name: "Apply resource requests and limits to Deployments"
+- name: "Apply resource requests to the Trillian DB Deployment"
   kubernetes.core.k8s_json_patch:
     kind: Deployment
-    name: "{{ item.name }}"
-    namespace: "{{ baseline.namespace }}"
+    name: "trillian-db"
+    namespace: "{{ baseline_namespace }}"
     patch:
       - op: add
         path: /spec/template/spec/containers/0/resources
         value:
           requests:
-            cpu: "{{ item.resources.requests.cpu }}"
-            memory: "{{ item.resources.requests.memory }}"
+            cpu: "{{ resources.trillian_database.requests.cpu }}"
+            memory: "{{ resources.trillian_database.requests.memory }}"
           limits:
-            cpu: "{{ item.resources.limits.cpu }}"
-            memory: "{{ item.resources.limits.memory }}"
-  loop:
-    - name: rekor-server
-      resources: "{{ resources.rekor }}"
-    - name: trillian-db
-      resources: "{{ resources.trillian_database }}"
-  loop_control:
-    label: "{{ item.name }}"
+            cpu: "{{ resources.trillian_database.limits.cpu }}"
+            memory: "{{ resources.trillian_database.limits.memory }}"
 
+
+- name: "Apply affinity to the Trillian DB Deployment"
+  kubernetes.core.k8s_json_patch:
+    kind: Deployment
+    name: "trillian-db"
+    namespace: "{{ baseline_namespace }}"
+    patch:
+      - op: add
+        path: /spec/template/spec/affinity
+        value:
+          nodeAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              nodeSelectorTerms:
+              - matchExpressions:
+                - key: performance-zone
+                  operator: In
+                  values:
+                  - "database"
+  when: template_to_deploy == "securesign-cr-optimized.yml.j2"
+            
 - name: "Verify ServiceMonitors are created"
   k8s_info:
     api_version: monitoring.coreos.com/v1

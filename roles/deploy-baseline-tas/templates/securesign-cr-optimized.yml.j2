@@ -14,6 +14,13 @@ spec:
     monitoring:
       enabled: {{ components.ctlog.monitoring_enabled }}
     replicas: 1
+    resources:
+      requests:
+        cpu: "{{ resources.ctlog.requests.cpu }}"
+        memory: "{{ resources.ctlog.requests.memory }}"
+      limits:
+        cpu: "{{ resources.ctlog.limits.cpu }}"
+        memory: "{{ resources.ctlog.limits.memory }}"
 
   fulcio:
     externalAccess:
@@ -31,6 +38,13 @@ spec:
       organizationEmail: "{{ certificates.organization_email }}"
       organizationName: "{{ certificates.organization_name }}"
     replicas: 1
+    resources:
+      requests:
+        cpu: "{{ resources.fulcio.requests.cpu }}"
+        memory: "{{ resources.fulcio.requests.memory }}"
+      limits:
+        cpu: "{{ resources.fulcio.limits.cpu }}"
+        memory: "{{ resources.fulcio.limits.memory }}"
 
   rekor:
     externalAccess:
@@ -38,6 +52,22 @@ spec:
     monitoring:
       enabled: {{ components.rekor.monitoring_enabled }}
     replicas: 1
+    resources:
+      requests:
+        cpu: "{{ resources.rekor.requests.cpu }}"
+        memory: "{{ resources.rekor.requests.memory }}"
+      limits:
+        cpu: "{{ resources.rekor.limits.cpu }}"
+        memory: "{{ resources.rekor.limits.memory }}"
+    affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: performance-zone
+                operator: In
+                values:
+                - application
 
   trillian:
     monitoring:
@@ -51,9 +81,41 @@ spec:
         size: {{ storage.trillian_database_size }}
     server:
       replicas: 1
+      resources:
+        requests:
+          cpu: "{{ resources.trillian_logserver.requests.cpu }}"
+          memory: "{{ resources.trillian_logserver.requests.memory }}"
+        limits:
+          cpu: "{{ resources.trillian_logserver.limits.cpu }}"
+          memory: "{{ resources.trillian_logserver.limits.memory }}"
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: performance-zone
+                operator: In
+                values:
+                - database
 
     signer:
       replicas: 1
+      resources:
+        requests:
+          cpu: "{{ resources.trillian_logsigner.requests.cpu }}"
+          memory: "{{ resources.trillian_logsigner.requests.memory }}"
+        limits:
+          cpu: "{{ resources.trillian_logsigner.limits.cpu }}"
+          memory: "{{ resources.trillian_logsigner.limits.memory }}"
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: performance-zone
+                operator: In
+                values:
+                - database
 
   tsa:
     externalAccess:
@@ -77,6 +139,13 @@ spec:
           organizationEmail: "{{ certificates.organization_email }}"
           organizationName: "{{ certificates.organization_name }}"
     replicas: 1
+    resources:
+      requests:
+        cpu: "{{ resources.tsa.requests.cpu }}"
+        memory: "{{ resources.tsa.requests.memory }}"
+      requests:
+        cpu: "{{ resources.tsa.limits.cpu }}"
+        memory: "{{ resources.tsa.limits.memory }}"
 
   tuf:
     externalAccess:

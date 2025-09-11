@@ -7,6 +7,9 @@ BASELINE_NAMESPACE="tas-monitoring"
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 VENV_DIR="${SCRIPT_DIR}/ansible_venv"
 
+DEPLOY_TYPE=${1:-baseline}
+ANSIBLE_EXTRA_VARS=""
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -44,13 +47,21 @@ else
     echo -e "${GREEN}Ansible environment is already set up.${NC}"
 fi
 
+if [ "$DEPLOY_TYPE" == "optimized" ]; then
+    echo "Deployment type: OPTIMIZED"
+    ANSIBLE_EXTRA_VARS="-e template_to_deploy=securesign-cr-optimized.yml.j2"
+else
+    echo "Deployment type: BASELINE"
+fi
+
 # Run deployment
 echo ""
-echo -e "${BLUE}Starting baseline infrastructure deployment...${NC}"
+echo -e "${BLUE}Starting ${DEPLOY_TYPE} infrastructure deployment...${NC}"
 "${VENV_DIR}/bin/ansible-playbook" -i inventory.yml setup-baseline.yml \
-    -e baseline_namespace="$BASELINE_NAMESPACE" 
+    -e baseline_namespace="$BASELINE_NAMESPACE" \
+    $ANSIBLE_EXTRA_VARS
     
 # Final status
 echo ""
-echo -e "${GREEN}Baseline infrastructure deployment completed!${NC}"
+echo -e "${GREEN}${DEPLOY_TYPE} infrastructure deployment completed!${NC}"
 echo ""

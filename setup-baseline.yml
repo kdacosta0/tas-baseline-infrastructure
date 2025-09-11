@@ -23,6 +23,11 @@
         deployment_user: "{{ ansible_user_id }}"
 
   tasks:
+    - name: "Configure performance labels on worker nodes"
+      include_role:
+        name: configure-node-labels
+      tags: ["labels", "setup"]
+
     - name: "Install required operators"
       include_role:
         name: install-operators
@@ -48,3 +53,8 @@
         name: deploy-monitoring
       when: monitoring.enabled | default(true)
       tags: ["monitoring", "deploy"]
+
+    - name: "Deploy k6 stack"
+      include_role:
+        name: deploy-k6-test
+      tags: ["k6-test", "deploy"]

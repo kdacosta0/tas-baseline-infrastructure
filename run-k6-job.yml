@@ -1,0 +1,103 @@
+---
+- name: Run K6 Test Job
+  hosts: localhost
+  connection: local
+
+  vars:
+    k6_args: "--vus 1 --iterations 1"
+    generate_data_mode: false
+    rekor_uuids: ""
+    k6_script_to_run: "tas-perf-sign-template.js"
+
+
+  pre_tasks:
+    - name: "Discover Fulcio URL"
+      k8s_info:
+        api_version: rhtas.redhat.com/v1alpha1
+        kind: Fulcio
+        namespace: "{{ baseline_namespace }}"
+      register: fulcio_info
+    - name: "Set Fulcio URL fact"
+      ansible.builtin.set_fact:
+        dynamic_fulcio_url: "{{ fulcio_info.resources[0].status.url }}"
+
+    - name: "Discover Rekor URL"
+      k8s_info:
+        api_version: rhtas.redhat.com/v1alpha1
+        kind: Rekor
+        namespace: "{{ baseline_namespace }}"
+      register: rekor_info
+    - name: "Set Rekor URL fact"
+      ansible.builtin.set_fact:
+        dynamic_rekor_url: "{{ rekor_info.resources[0].status.url }}"
+
+    - name: "Discover Keycloak (OIDC) Route"
+      k8s_info:
+        api_version: route.openshift.io/v1
+        kind: Route
+        name: "keycloak"
+        namespace: "keycloak-system"
+      register: keycloak_route_info
+    - name: "Set OIDC Issuer URL fact"
+      ansible.builtin.set_fact:
+        dynamic_oidc_issuer_url: "https://{{ keycloak_route_info.resources[0].spec.host }}/auth/realms/trusted-artifact-signer"
+
+    - name: "Discover Timestamp Authority (TSA) URL"
+      k8s_info:
+        api_version: rhtas.redhat.com/v1alpha1
+        kind: TimestampAuthority
+        namespace: "{{ baseline_namespace }}"
+      register: tsa_info
+    - name: "Set TSA URL fact"
+      ansible.builtin.set_fact:
+        dynamic_tsa_url: "{{ tsa_info.resources[0].status.url }}"
+
+    - name: "Discover Pushgateway Route"
+      k8s_info:
+        api_version: route.openshift.io/v1
+        kind: Route
+        name: "pushgateway"
+        namespace: "{{ baseline_namespace }}"
+      register: pushgateway_route_info
+    - name: "Set Pushgateway URL fact"
+      ansible.builtin.set_fact:
+        dynamic_pushgateway_url: "https://{{ pushgateway_route_info.resources[0].spec.host }}"
+
+    - name: "Display discovered URLs for verification"
+      ansible.builtin.debug:
+        msg:
+          - "Pushgateway URL: {{ dynamic_pushgateway_url }}"
+          - "OIDC Issuer URL: {{ dynamic_oidc_issuer_url }}"
+          - "Fulcio URL: {{ dynamic_fulcio_url }}"
+          - "Rekor URL: {{ dynamic_rekor_url }}"
+          - "TSA URL: {{ dynamic_tsa_url }}"
+
+    - name: "Initialize additional environment variables block"
+      ansible.builtin.set_fact:
+        additional_env_vars: ""
+
+    - name: "Append GENERATE_DATA_MODE if enabled"
+      ansible.builtin.set_fact:
+        additional_env_vars: |
+          {{ additional_env_vars }}
+          - name: GENERATE_DATA_MODE
+            value: "true"
+      when: generate_data_mode is defined and generate_data_mode
+
+    - name: "Append REKOR_UUIDS if provided"
+      ansible.builtin.set_fact:
+        additional_env_vars: |
+          {{ additional_env_vars }}
+          - name: REKOR_UUIDS
+            value: "{{ rekor_uuids }}"
+      when: rekor_uuids is defined and rekor_uuids
+
+  tasks:
+    - name: "Run and Monitor K6 Test"
+      block:
+        - name: "Run the K6 Job"
+          k8s:
+            state: present
+            namespace: "{{ k6_test_namespace }}"
+            definition: "{{ lookup('template', 'k6-job.yml.j2') }}"
+          register: k6_job

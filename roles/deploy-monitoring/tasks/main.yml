@@ -1,7 +1,7 @@
 # Deploy TAS Monitoring Stack (Grafana + Dashboards)
 ---
 - name: Find the trillian database secret to get credentials
-  kubernetes.core.k8s_info:
+  k8s_info:
     api_version: v1
     kind: Secret
     namespace: "{{ baseline_namespace }}"
@@ -15,25 +15,6 @@
 - name: Set database credential facts
   ansible.builtin.set_fact:
     db_secret_name: "{{ trillian_db_secret_info.resources[0].metadata.name }}"
-
-- name: Get database credentials from secret
-  k8s_info:
-    api_version: v1
-    kind: Secret
-    namespace: "{{ baseline_namespace }}"
-    name: "{{ db_secret_name }}"
-  register: db_credentials
-
-- name: Set database user and password facts
-  set_fact:
-    db_user: "{{ db_credentials.resources[0].data['mysql-user'] | b64decode }}"
-    db_password: "{{ db_credentials.resources[0].data['mysql-password'] | b64decode }}"
-  no_log: true
-
-- name: Deploy the Database Exporter Secret
-  k8s:
-    state: present
-    definition: "{{ lookup('template', 'db-exporter-secret.yml.j2') }}"
 
 - name: Deploy the Database Exporter Deployment
   k8s:
@@ -179,16 +160,6 @@
     - { kind: "GrafanaDashboard", name: "{{ monitoring.dashboard.name }}" }
   loop_control:
     label: "{{ item.kind }}/{{ item.name }}"
-
-- name: "Deploy Prometheus Pushgateway for k6 metrics"
-  k8s:
-    state: present
-    definition: "{{ lookup('template', item) }}"
-  loop:
-    - 'pushgateway-deployment.yml.j2'
-    - 'pushgateway-service.yml.j2'
-    - 'pushgateway-servicemonitor.yml.j2'
-    - 'pushgateway-route.yml.j2'
 
 - name: "TAS monitoring deployment completed!"
   debug:

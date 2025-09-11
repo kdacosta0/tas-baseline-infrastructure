@@ -1,0 +1,61 @@
+---
+- name: Stop and Cleanup K6 Test Jobs
+  hosts: localhost
+  connection: local
+
+  tasks:
+    - name: "Find the running K6 test job"
+      k8s_info:
+        kind: Job
+        namespace: "{{ k6_test_namespace }}"
+        name: "{{ k6_job_name_to_cleanup }}-test"
+      register: k6_job_to_delete
+
+    - name: "Cleanup: Delete the running Job and its Pods"
+      k8s:
+        state: absent
+        namespace: "{{ k6_test_namespace }}"
+        definition: "{{ k6_job_to_delete.resources[0] }}"
+        delete_options:
+          propagationPolicy: 'Background'
+      when: k6_job_to_delete.resources | length > 0
+
+    - name: "Wait for the Job to be completely deleted"
+      k8s_info:
+        kind: Job
+        name: "{{ k6_job_name_to_cleanup }}-test"
+        namespace: "{{ k6_test_namespace }}"
+      register: job_status
+      until: "job_status.resources | length == 0"
+      retries: 30
+      delay: 5
+      when: k6_job_to_delete.resources | length > 0
+
+    - name: "Discover Pushgateway Route"
+      k8s_info:
+        api_version: route.openshift.io/v1
+        kind: Route
+        name: "pushgateway"
+        namespace: "{{ baseline_namespace }}"
+      register: pushgateway_route_info
+
+    - name: "Set Pushgateway URL fact"
+      ansible.builtin.set_fact:
+        dynamic_pushgateway_url: "https://{{ pushgateway_route_info.resources[0].spec.host }}"
+      when: pushgateway_route_info.resources | length > 0
+
+    - name: "Cleanup: Delete Go helper error metrics from Pushgateway"
+      ansible.builtin.uri:
+        url: "{{ dynamic_pushgateway_url }}/metrics/job/{{ k6_job_name_to_cleanup }}/instance/go_helper_error_counter"
+        method: DELETE
+        validate_certs: false
+        status_code: [200, 202, 204]
+      when: dynamic_pushgateway_url is defined
+      ignore_errors: true
+
+    - name: "Cleanup: Delete metrics from Pushgateway"
+      ansible.builtin.uri:
+        url: "{{ dynamic_pushgateway_url }}/metrics/job/{{ k6_job_name_to_cleanup }}"
+        method: DELETE
+        validate_certs: false
+        status_code: [202, 204]

@@ -3,9 +3,13 @@
 baseline:
   namespace: "tas-monitoring"
   instance_name: "securesign-sample"
-  
-# TODO: OIDC Configuration Analysis Required
-# - Evaluate impact of different OIDC providers on resource utilization
+
+template_to_deploy: "securesign-cr.yml.j2"
+
+k6_test_namespace: "k6-tests"
+k6_sign_script_path: "./scripts/tas-perf-sign-template.js"
+k6_verify_script_path: "./scripts/tas-perf-verify-template.js"
+
 oidc:
   client_id: "trusted-artifact-signer"
   type: "email"
@@ -27,55 +31,27 @@ storage:
   trillian_database_size: "10Gi"
 
 resources:
-  trillian_logserver:
-    requests:
-      cpu: "3000m"
-      memory: "768Mi"
-    limits:
-      cpu: "4000m"
-      memory: "1.5Gi"
-  trillian_logsigner:
-    requests:
-      cpu: "250m"
-      memory: "256Mi"
-    limits:
-      cpu: "500m"
-      memory: "1Gi"
   trillian_database:
-    requests:
-      cpu: "2000m"
-      memory: "1Gi"
-    limits:
-      cpu: "4000m"
-      memory: "2Gi"
+    requests: { cpu: "2000m", memory: "1Gi" }
+    limits:   { cpu: "4500m", memory: "4Gi" }
+  trillian_logserver:
+    requests: { cpu: "2000m", memory: "128Mi" }
+    limits:   { cpu: "4500m", memory: "512Mi" }
+  trillian_logsigner:
+    requests: { cpu: "100m", memory: "128Mi" }
+    limits:   { cpu: "1000m", memory: "256Mi" }
   rekor:
-    requests:
-      cpu: "1000m"
-      memory: "512Mi"
-    limits:
-      cpu: "1500m"
-      memory: "1Gi"
+    requests: { cpu: "1250m", memory: "128Mi" }
+    limits:   { cpu: "2500m", memory: "512Mi" }
   fulcio:
-    requests:
-      cpu: "500m"
-      memory: "512Mi"
-    limits:
-      cpu: "1500m"
-      memory: "1Gi"
+    requests: { cpu: "750m", memory: "128Mi" }
+    limits:   { cpu: "1500m", memory: "256Mi" }
   ctlog:
-    requests:
-      cpu: "200m"
-      memory: "256Mi"
-    limits:
-      cpu: "500m"
-      memory: "512Mi"
+    requests: { cpu: "250m", memory: "128Mi" }
+    limits:   { cpu: "1000m", memory: "256Mi" }
   tsa:
-    requests:
-      cpu: "200m"
-      memory: "256Mi"
-    limits:
-      cpu: "500m"
-      memory: "512Mi"
+    requests: { cpu: "100m", memory: "128Mi" }
+    limits:   { cpu: "500m", memory: "256Mi" }
 
 components:
   fulcio:
@@ -142,6 +118,6 @@ monitoring:
   dashboard:
     name: "tas-performance-kpis"
     title: "TAS Performance Dashboard - KPIs"
-    refresh_interval: "10s"
+    refresh_interval: "5s"
     time_range: "15m"
-    k6_job_name: "verifying_test|signing_test"
+    k6_job_name: "verifying|signing"

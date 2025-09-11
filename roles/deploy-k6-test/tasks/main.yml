@@ -1,0 +1,40 @@
+---
+- name: "Create namespace for K6 tests"
+  k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: "{{ k6_test_namespace }}"
+
+- name: "Deploy Prometheus Pushgateway for k6 metrics"
+  k8s:
+    state: present
+    definition: "{{ lookup('template', item) }}"
+  loop:
+    - 'pushgateway-deployment.yml.j2'
+    - 'pushgateway-service.yml.j2'
+    - 'pushgateway-servicemonitor.yml.j2'
+    - 'pushgateway-route.yml.j2'
+
+- name: "Create ConfigMap with K6 script and configuration"
+  k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: ConfigMap
+      metadata:
+        name: "k6-test-script"
+        namespace: "{{ k6_test_namespace }}"
+      data:
+        tas-perf-sign-template.js: "{{ lookup('file', k6_sign_script_path) }}"
+        tas-perf-verify-template.js: "{{ lookup('file', k6_verify_script_path) }}"
+
+- name: "K6 test setup deployment completed!"
+  ansible.builtin.debug:
+    msg:
+      - "K6 test environment is ready in namespace '{{ k6_test_namespace }}'."
+      - "   - Deployed Go Crypto Helper"
+      - "   - Deployed Prometheus Pushgateway"
+      - "   - Created ConfigMap 'k6-test-script' with test scripts."

@@ -15,9 +15,38 @@ spec:
       labels:
         app: trillian-db-exporter
     spec:
+      initContainers:
+      - name: config-preparer
+        image: registry.access.redhat.com/ubi8/ubi-minimal:latest
+        command:
+          - /bin/sh
+          - -c
+          - |
+            echo "Preparing my.cnf file with current credentials..."
+            echo "[client]" > /config/my.cnf
+            echo "user = ${DB_USER}" >> /config/my.cnf
+            echo "password = ${DB_PASSWORD}" >> /config/my.cnf
+            echo "host = trillian-mysql.{{ baseline_namespace }}.svc.cluster.local" >> /config/my.cnf
+            echo "port = 3306" >> /config/my.cnf
+            echo "my.cnf file created successfully."
+        env:
+          - name: DB_USER
+            valueFrom:
+              secretKeyRef:
+                name: "{{ db_secret_name }}"
+                key: mysql-user
+          - name: DB_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: "{{ db_secret_name }}"
+                key: mysql-password
+        volumeMounts:
+        - name: mysql-exporter-config
+          mountPath: /config
+
       containers:
       - name: mysql-exporter
-        image: prom/mysqld-exporter:v0.17.2
+        image: quay.io/rh_ee_kdacosta/mysqld-exporter:fixed-3
         command:
           - "/bin/sh"
           - "-c"
@@ -44,7 +73,7 @@ spec:
               - ALL
           seccompProfile:
             type: RuntimeDefault
+            
       volumes:
       - name: mysql-exporter-config
-        secret:
-          secretName: trillian-db-exporter-secret
+        emptyDir: {}
