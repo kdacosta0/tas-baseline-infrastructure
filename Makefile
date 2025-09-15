@@ -100,8 +100,9 @@ force-clean:
 
 
 clean-apps:
-	@echo "Cleaning up TAS applications only..."
-	oc delete namespace tas-monitoring --ignore-not-found=true
+	@echo "Cleaning up applications only..."
+	oc delete namespace tas-monitoring --ignore-not-found=true --timeout=3m
+	oc delete namespace k6-tests --ignore-not-found=true --timeout=3m
 	@echo "Apps cleanup complete (operators preserved)"
 
 clean-labels:

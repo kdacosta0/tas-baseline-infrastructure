@@ -7,8 +7,8 @@ baseline:
 template_to_deploy: "securesign-cr.yml.j2"
 
 k6_test_namespace: "k6-tests"
-k6_sign_script_path: "./scripts/tas-perf-sign-template.js"
-k6_verify_script_path: "./scripts/tas-perf-verify-template.js"
+k6_sign_script_path: "./k6-scripts/tas-perf-sign-template.js"
+k6_verify_script_path: "./k6-scripts/tas-perf-verify-template.js"
 
 oidc:
   client_id: "trusted-artifact-signer"

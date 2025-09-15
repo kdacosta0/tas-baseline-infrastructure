@@ -13,6 +13,40 @@
           purpose: "baseline-infrastructure"
           managed-by: "ansible"
 
-- name: "Namespace ready for TAS deployment"
+- name: "Grant Prometheus monitoring permissions in the baseline namespace"
+  k8s:
+    state: present
+    definition: |
+      apiVersion: rbac.authorization.k8s.io/v1
+      kind: Role
+      metadata:
+        name: prometheus-k8s-metrics-reader
+        namespace: {{ baseline_namespace }}
+      rules:
+      - apiGroups: [""]
+        resources:
+        - services
+        - endpoints
+        - pods
+        verbs:
+        - get
+        - list
+        - watch
+      ---
+      apiVersion: rbac.authorization.k8s.io/v1
+      kind: RoleBinding
+      metadata:
+        name: prometheus-k8s-metrics-reader-binding
+        namespace: {{ baseline_namespace }}
+      roleRef:
+        apiGroup: rbac.authorization.k8s.io
+        kind: Role
+        name: prometheus-k8s-metrics-reader
+      subjects:
+      - kind: ServiceAccount
+        name: prometheus-k8s
+        namespace: openshift-monitoring
+
+- name: "Namespace ready for TAS deployment with monitoring permissions"
   debug:
-    msg: "Namespace {{ baseline_namespace }} created with monitoring enabled"
+    msg: "Namespace {{ baseline_namespace }} created and configured for monitoring."
