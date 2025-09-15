@@ -86,6 +86,20 @@ A variety of pre-configured tests are available for both `sign` and `verify` wor
     * `make verify-optimal-range`: A realistic production load test with 100 VUs.
     * `make verify-stress`: A high-load stress test.
 
+* **Mixed Workload Test:**
+    To simulate a realistic mixed workload, the `sign` and `verify` tests must be run in parallel. The recommended way to do this is in two separate terminals.
+
+    **1. In Terminal 1, run the `sign` workload:**
+    
+        make sign-load
+
+    **2. In Terminal 2, run the `verify` workload:**
+    
+        # First, generate a UUID if you don't have one
+        make generate-verify-data 
+        # Then, use the exported UUID to run the verify test
+        make verify-load UUID=<your-uuid-here>
+
 #### Utility Commands
 - `check`: Verifies that all prerequisites are met.
 - `status`: Shows the deployment status of key RHTAS components.
@@ -107,6 +121,14 @@ The main output of this project is the comprehensive analysis report, which cont
 - Report: [Performance Analysis Report (analysis.md)](analysis.md)**
 
 All raw data (CSV files exported from Grafana) from the benchmark runs are archived in the `/results` directory for full transparency and reproducibility.
+
+## Monitoring
+
+The deployed infrastructure includes a Grafana instance with a custom dashboard to provide real-time insights into RHTAS performance and health.
+
+![RHTAS Performance Dashboard](./assets/dashboard-preview.png)
+*Figure 1: The custom Grafana dashboard showing key performance indicators during a load test.*
+
 
 ## License
 
