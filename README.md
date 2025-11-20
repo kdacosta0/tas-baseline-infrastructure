@@ -1,135 +1,80 @@
 # RHTAS Performance Analysis Infrastructure
 
-This repository contains a comprehensive suite of tools for deploying and conducting performance analysis on the Red Hat Trusted Artifact Signer (RHTAS) stack. The primary goal is to provide a standardized, automated, and repeatable method for benchmarking system performance under various workloads.
+This repository provides tools for deploying and conducting performance analysis on the Red Hat Trusted Artifact Signer (RHTAS) stack.
 
-The key deliverable of this project is a detailed **[Performance Analysis Report](analysis.md)**, which establishes clear performance metrics, identifies system bottlenecks, and provides data-driven recommendations.
+## Disclaimer
 
-## Table of Contents
-
-- [Overview](#overview)
-- [Prerequisites](#prerequisites)
-- [How to Use (Quick Start)](#how-to-use-quick-start)
-- [Available `make` Commands](#available-make-commands)
-- [Configuration Profiles](#configuration-profiles)
-- [Performance Report & Data](#performance-report--data)
-- [License](#license)
-
-## Overview
-
-This infrastructure provides a complete, automated setup for:
-- Deploying RHTAS components in different configurations.
-- Running various performance test scenarios (`sign`, `verify`).
-- Collecting performance metrics (RPS, Latency, CPU/Memory).
-- Analyzing results to provide clear, actionable recommendations.
+> **Caution**: This repository is **not stable** and may change at any time. The content provided here **may be incompatible** with past, current, or future versions of Red Hat Trusted Artifact Signer (RHTAS).
 
 ## Prerequisites
 
-- OpenShift cluster access (`oc` CLI tool installed and logged in).
-- Ansible and required Python dependencies (the `deploy.sh` script will set up a virtual environment automatically).
+- OpenShift cluster access (`oc` CLI tool installed and logged in)
+- Ansible and required Python dependencies (the `deploy.sh` script will set up a virtual environment automatically)
 
-## How to Use (Quick Start)
+## Quick Start
 
-#### Step 1: Deploy the Infrastructure
-Choose one of the two available configuration profiles to deploy.
-```
-    # Deploy the baseline configuration
-    make deploy-baseline
+### Deploy Infrastructure
 
-    # OR
+```bash
+# Deploy baseline configuration
+make deploy-baseline
 
-    # Deploy the optimized configuration (with high resources & affinity)
-    make deploy-optimized
+# OR deploy optimized configuration (high resources & affinity)
+make deploy-optimized
 ```
 
-#### Step 2: Run a Performance Test
-Execute one of the predefined test scenarios. For example, to run the `signing` test with a realistic production load:
-```
-    # Run the signing test with 100 Virtual Users
-    make sign-optimal-range
-```
+### Clean Up
 
-#### Step 3: Clean Up
-After testing is complete, remove the deployed resources.
+```bash
+# Remove only applications (keeps operators)
+make clean-apps
 
-```
-    # Remove only the test jobs and RHTAS applications
-    make clean-apps
-
-    # OR
-
-    # WARNING: This removes everything, including operators
-    make clean
+# Remove everything including operators
+make clean
 ```
 
-## Available `make` Commands
+## Available Make Commands
 
-#### Infrastructure Management
-- `deploy` or `deploy-baseline`: Deploys the baseline RHTAS configuration.
-- `deploy-optimized`: Deploys the high-performance, optimized RHTAS configuration.
-- `clean-apps`: Deletes the `Securesign` CR and test-related namespaces.
-- `clean`: Deletes everything, including operators, CRDs, and all related namespaces.
+### Infrastructure
+- `make deploy` or `make deploy-baseline` - Deploy baseline RHTAS configuration
+- `make deploy-optimized` - Deploy optimized RHTAS configuration
+- `make clean-apps` - Remove applications only (keeps operators)
+- `make clean` - Remove everything including operators
+- `make check` - Verify prerequisites
+- `make status` - Show deployment status
 
-#### Performance Tests
-A variety of pre-configured tests are available for both `sign` and `verify` workloads.
+### Performance Tests
 
-* **Signing Tests:**
-    * `make sign-smoke`: A simple 1 VU, 1 iteration test.
-    * `make sign-load`: A light load test with 20 VUs.
-    * `make sign-optimal-range`: A realistic production load test with 100 VUs.
-    * `make sign-stress`: A high-load stress test.
-    * `make sign-fill`: A utility to pre-seed the database with 10,000 entries.
+**Signing Tests:**
+- `make sign-smoke` - Simple 1 VU, 1 iteration test
+- `make sign-load` - Light load test with 20 VUs
+- `make sign-optimal-range` - Production load test with 100 VUs
+- `make sign-stress` - High-load stress test
+- `make sign-fill` - Pre-seed database with 10,000 entries
 
-* **Verifying Tests:**
-    * `make generate-verify-data`: Generates a UUID needed for verification tests.
-    * `make verify-smoke`: A simple 1 VU, 1 iteration test.
-    * `make verify-load`: A light load test with 80 VUs.
-    * `make verify-optimal-range`: A realistic production load test with 100 VUs.
-    * `make verify-stress`: A high-load stress test.
+**Verifying Tests:**
+- `make generate-verify-data` - Generate UUID needed for verification tests
+- `make verify-smoke` - Simple 1 VU, 1 iteration test
+- `make verify-load` - Light load test with 80 VUs (requires `UUID=<uuid>`)
+- `make verify-optimal-range` - Production load test with 100 VUs (requires `UUID=<uuid>`)
+- `make verify-stress` - High-load stress test (requires `UUID=<uuid>`)
 
-* **Mixed Workload Test:**
-    To simulate a realistic mixed workload, the `sign` and `verify` tests must be run in parallel. The recommended way to do this is in two separate terminals.
+## Configuration
 
-    **1. In Terminal 1, run the `sign` workload:**
-    
-        make sign-load
+### Default Test Credentials
 
-    **2. In Terminal 2, run the `verify` workload:**
-    
-        # First, generate a UUID if you don't have one
-        make generate-verify-data 
-        # Then, use the exported UUID to run the verify test
-        make verify-load UUID=<your-uuid-here>
+- **Keycloak OIDC User**: `jdoe@redhat.com` / `secure`
+- **Grafana Admin**: `admin` / `admin`
+- **Certificate Email**: `jdoe@redhat.com`
 
-#### Utility Commands
-- `check`: Verifies that all prerequisites are met.
-- `status`: Shows the deployment status of key RHTAS components.
-
-## Configuration Profiles
-
-This suite uses two primary configurations to compare performance:
-
-1.  **Baseline Configuration (`deploy-baseline`)**
-    This profile uses a single replica for all services, with high `resources` allocated only to the `trillian-db` component and no specific `affinity` rules. It serves as a benchmark for "out-of-the-box" performance.
-
-2.  **Optimized Configuration (`deploy-optimized`)**
-    This profile is designed for high performance. It uses robust `resources` for all key components and applies `nodeAffinity` rules to strategically co-locate services, minimizing network latency and resource contention.
-
-## Performance Report & Data
-
-The main output of this project is the comprehensive analysis report, which contains all methodologies, results, and recommendations.
-
-- Report: [Performance Analysis Report (analysis.md)](analysis.md)**
-
-All raw data (CSV files exported from Grafana) from the benchmark runs are archived in the `/results` directory for full transparency and reproducibility.
+These are hardcoded for test environment compatibility. For production, override via Ansible variables or modify `group_vars/all.yml`.
 
 ## Monitoring
 
-The deployed infrastructure includes a Grafana instance with a custom dashboard to provide real-time insights into RHTAS performance and health.
+The deployed infrastructure includes a Grafana instance with a custom dashboard for real-time performance insights.
 
 ![RHTAS Performance Dashboard](./assets/dashboard-preview.png)
-*Figure 1: The custom Grafana dashboard showing key performance indicators during a load test.*
-
 
 ## License
 
-This project is licensed under the terms included in the [LICENSE](LICENSE) file.
+This project is licensed under the Apache 2.0 License. See the [LICENSE](LICENSE) file for details.

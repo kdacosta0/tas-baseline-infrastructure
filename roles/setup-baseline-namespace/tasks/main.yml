@@ -1,7 +1,7 @@
 # Create and configure baseline namespace
 ---
 - name: "Create baseline namespace"
-  k8s:
+  kubernetes.core.k8s:
     name: "{{ baseline_namespace }}"
     api_version: v1
     kind: Namespace
@@ -14,7 +14,7 @@
           managed-by: "ansible"
 
 - name: "Grant Prometheus monitoring permissions in the baseline namespace"
-  k8s:
+  kubernetes.core.k8s:
     state: present
     definition: |
       apiVersion: rbac.authorization.k8s.io/v1
@@ -48,5 +48,5 @@
         namespace: openshift-monitoring
 
 - name: "Namespace ready for TAS deployment with monitoring permissions"
-  debug:
+  ansible.builtin.debug:
     msg: "Namespace {{ baseline_namespace }} created and configured for monitoring."

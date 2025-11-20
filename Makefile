@@ -6,18 +6,36 @@ SIGN_SCRIPT     := tas-perf-sign-template.js
 VERIFY_SCRIPT   := tas-perf-verify-template.js
 
 
-.PHONY: help deploy cleanup cleanup-apps check logs status sign-smoke sign-load sign-stress verify-smoke verify-load
+.PHONY: help deploy deploy-baseline deploy-optimized clean clean-apps force-clean clean-labels check status \
+	sign-smoke sign-load sign-stress sign-optimal-range sign-fill \
+	generate-verify-data verify-smoke verify-load verify-stress verify-optimal-range
 
 help:
 	@echo "TAS Baseline Infrastructure"
 	@echo ""
-	@echo "Available targets:"
-	@echo "  deploy       - Deploy TAS baseline infrastructure"
-	@echo "  clean        - Remove ALL TAS resources and operators"
-	@echo "  clean-apps   - Remove only TAS applications (keep operators)"
-	@echo "  check        - Verify prerequisites"
-	@echo "  status       - Show deployment status"
-	@echo "  logs         - Show recent logs"
+	@echo "Infrastructure:"
+	@echo "  deploy            - Deploy TAS baseline infrastructure (alias for deploy-baseline)"
+	@echo "  deploy-baseline    - Deploy baseline RHTAS configuration"
+	@echo "  deploy-optimized   - Deploy optimized RHTAS configuration (high resources & affinity)"
+	@echo "  clean              - Remove ALL TAS resources and operators"
+	@echo "  clean-apps         - Remove only TAS applications (keep operators)"
+	@echo "  force-clean        - Force cleanup (removes finalizers first)"
+	@echo "  check              - Verify prerequisites"
+	@echo "  status             - Show deployment status"
+	@echo ""
+	@echo "Signing Tests:"
+	@echo "  sign-smoke         - Simple 1 VU, 1 iteration test"
+	@echo "  sign-load          - Light load test with 20 VUs"
+	@echo "  sign-optimal-range - Production load test with 100 VUs"
+	@echo "  sign-stress        - High-load stress test"
+	@echo "  sign-fill          - Pre-seed database with 10,000 entries"
+	@echo ""
+	@echo "Verifying Tests:"
+	@echo "  generate-verify-data - Generate UUID needed for verification tests"
+	@echo "  verify-smoke         - Simple 1 VU, 1 iteration test (requires UUID=<uuid>)"
+	@echo "  verify-load          - Light load test with 80 VUs (requires UUID=<uuid>)"
+	@echo "  verify-optimal-range - Production load test with 100 VUs (requires UUID=<uuid>)"
+	@echo "  verify-stress        - High-load stress test (requires UUID=<uuid>)"
 	@echo ""
 
 # Prerequisites check

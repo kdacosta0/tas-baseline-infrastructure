@@ -12,56 +12,71 @@
 
   pre_tasks:
     - name: "Discover Fulcio URL"
-      k8s_info:
+      kubernetes.core.k8s_info:
         api_version: rhtas.redhat.com/v1alpha1
         kind: Fulcio
         namespace: "{{ baseline_namespace }}"
       register: fulcio_info
+      failed_when: fulcio_info.resources | length == 0
+      
     - name: "Set Fulcio URL fact"
       ansible.builtin.set_fact:
         dynamic_fulcio_url: "{{ fulcio_info.resources[0].status.url }}"
+      when: fulcio_info.resources | length > 0
 
     - name: "Discover Rekor URL"
-      k8s_info:
+      kubernetes.core.k8s_info:
         api_version: rhtas.redhat.com/v1alpha1
         kind: Rekor
         namespace: "{{ baseline_namespace }}"
       register: rekor_info
+      failed_when: rekor_info.resources | length == 0
+      
     - name: "Set Rekor URL fact"
       ansible.builtin.set_fact:
         dynamic_rekor_url: "{{ rekor_info.resources[0].status.url }}"
+      when: rekor_info.resources | length > 0
 
     - name: "Discover Keycloak (OIDC) Route"
-      k8s_info:
+      kubernetes.core.k8s_info:
         api_version: route.openshift.io/v1
         kind: Route
         name: "keycloak"
         namespace: "keycloak-system"
       register: keycloak_route_info
+      failed_when: keycloak_route_info.resources | length == 0
+      
     - name: "Set OIDC Issuer URL fact"
       ansible.builtin.set_fact:
         dynamic_oidc_issuer_url: "https://{{ keycloak_route_info.resources[0].spec.host }}/auth/realms/trusted-artifact-signer"
+      when: keycloak_route_info.resources | length > 0
 
     - name: "Discover Timestamp Authority (TSA) URL"
-      k8s_info:
+      kubernetes.core.k8s_info:
         api_version: rhtas.redhat.com/v1alpha1
         kind: TimestampAuthority
         namespace: "{{ baseline_namespace }}"
       register: tsa_info
+      failed_when: tsa_info.resources | length == 0
+      
     - name: "Set TSA URL fact"
       ansible.builtin.set_fact:
         dynamic_tsa_url: "{{ tsa_info.resources[0].status.url }}"
+      when: tsa_info.resources | length > 0
 
     - name: "Discover Pushgateway Route"
-      k8s_info:
+      kubernetes.core.k8s_info:
         api_version: route.openshift.io/v1
         kind: Route
         name: "pushgateway"
         namespace: "{{ baseline_namespace }}"
       register: pushgateway_route_info
+      failed_when: pushgateway_route_info.resources | length == 0
+      
     - name: "Set Pushgateway URL fact"
       ansible.builtin.set_fact:
         dynamic_pushgateway_url: "https://{{ pushgateway_route_info.resources[0].spec.host }}"
+      when: pushgateway_route_info.resources | length > 0
 
     - name: "Display discovered URLs for verification"
       ansible.builtin.debug:
@@ -82,7 +97,7 @@
           {{ additional_env_vars }}
           - name: GENERATE_DATA_MODE
             value: "true"
-      when: generate_data_mode is defined and generate_data_mode
+      when: generate_data_mode is defined and (generate_data_mode | bool)
 
     - name: "Append REKOR_UUIDS if provided"
       ansible.builtin.set_fact:
@@ -90,13 +105,13 @@
           {{ additional_env_vars }}
           - name: REKOR_UUIDS
             value: "{{ rekor_uuids }}"
-      when: rekor_uuids is defined and rekor_uuids
+      when: rekor_uuids is defined and rekor_uuids != ""
 
   tasks:
     - name: "Run and Monitor K6 Test"
       block:
         - name: "Run the K6 Job"
-          k8s:
+          kubernetes.core.k8s:
             state: present
             namespace: "{{ k6_test_namespace }}"
             definition: "{{ lookup('template', 'k6-job.yml.j2') }}"

@@ -10,7 +10,7 @@
     
   pre_tasks:
     - name: "Display deployment overview"
-      debug:
+      ansible.builtin.debug:
         msg:
           - "================================================================"
           - "          TAS Baseline Infrastructure Deployment"
@@ -18,9 +18,9 @@
           - " Target Namespace: {{ baseline_namespace }}"
           
     - name: "Record deployment info"
-      set_fact:
-        deployment_timestamp: "{{ ansible_date_time.iso8601 }}"
-        deployment_user: "{{ ansible_user_id }}"
+      ansible.builtin.set_fact:
+        deployment_timestamp: "{{ ansible_facts['date_time']['iso8601'] }}"
+        deployment_user: "{{ ansible_facts['user_id'] }}"
 
   tasks:
     - name: "Configure performance labels on worker nodes"

@@ -5,12 +5,12 @@
   changed_when: false
 
 - name: Deploy Keycloak Resources from Kustomize output
-  k8s:
+  kubernetes.core.k8s:
     state: present
     definition: "{{ kustomize_resources_output.stdout }}"
 
 - name: "Wait for Keycloak Route to become available"
-  k8s_info:
+  kubernetes.core.k8s_info:
     api_version: route.openshift.io/v1
     kind: Route
     name: keycloak

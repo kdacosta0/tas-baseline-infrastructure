@@ -1,4 +1,8 @@
 ---
+# Keycloak User Configuration
+# NOTE: This file contains test credentials (jdoe@redhat.com / secure)
+# These values are hardcoded because Keycloak OIDC is pre-configured for this user.
+# For production, modify this file or use Kustomize overlays to override.
 apiVersion: keycloak.org/v1alpha1
 kind: KeycloakUser
 metadata:

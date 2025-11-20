@@ -1,6 +1,6 @@
 ---
 - name: "Create namespace for K6 tests"
-  k8s:
+  kubernetes.core.k8s:
     state: present
     definition:
       apiVersion: v1
@@ -9,7 +9,7 @@
         name: "{{ k6_test_namespace }}"
 
 - name: "Deploy Prometheus Pushgateway for k6 metrics"
-  k8s:
+  kubernetes.core.k8s:
     state: present
     definition: "{{ lookup('template', item) }}"
   loop:
@@ -19,7 +19,7 @@
     - 'pushgateway-route.yml.j2'
 
 - name: "Create ConfigMap with K6 script and configuration"
-  k8s:
+  kubernetes.core.k8s:
     state: present
     definition:
       apiVersion: v1

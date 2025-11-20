@@ -1,6 +1,6 @@
 ---
 - name: "Get all worker nodes"
-  k8s_info:
+  kubernetes.core.k8s_info:
     kind: Node
     label_selectors:
       - node-role.kubernetes.io/worker=
@@ -17,7 +17,7 @@
     application_node_name: "{{ worker_nodes.resources[1].metadata.name }}"
 
 - name: "Check if the first node is already labeled for 'database'"
-  k8s_info:
+  kubernetes.core.k8s_info:
     kind: Node
     name: "{{ database_node_name }}"
   register: db_node_check
@@ -26,7 +26,7 @@
     label_db_node: "{{ 'performance-zone' not in db_node_check.resources[0].metadata.labels or db_node_check.resources[0].metadata.labels['performance-zone'] != 'database' }}"
 
 - name: "Check if the second node is already labeled for 'application'"
-  k8s_info:
+  kubernetes.core.k8s_info:
     kind: Node
     name: "{{ application_node_name }}"
   register: app_node_check
@@ -35,7 +35,7 @@
     label_app_node: "{{ 'performance-zone' not in app_node_check.resources[0].metadata.labels or app_node_check.resources[0].metadata.labels['performance-zone'] != 'application' }}"
 
 - name: "Apply 'database' label to the first worker node if needed"
-  k8s:
+  kubernetes.core.k8s:
     state: patched
     definition:
       apiVersion: v1
@@ -47,7 +47,7 @@
   when: label_db_node
 
 - name: "Apply 'application' label to the second worker node if needed"
-  k8s:
+  kubernetes.core.k8s:
     state: patched
     definition:
       apiVersion: v1

@@ -5,14 +5,14 @@
 
   tasks:
     - name: "Find the running K6 test job"
-      k8s_info:
+      kubernetes.core.k8s_info:
         kind: Job
         namespace: "{{ k6_test_namespace }}"
         name: "{{ k6_job_name_to_cleanup }}-test"
       register: k6_job_to_delete
 
     - name: "Cleanup: Delete the running Job and its Pods"
-      k8s:
+      kubernetes.core.k8s:
         state: absent
         namespace: "{{ k6_test_namespace }}"
         definition: "{{ k6_job_to_delete.resources[0] }}"
@@ -21,7 +21,7 @@
       when: k6_job_to_delete.resources | length > 0
 
     - name: "Wait for the Job to be completely deleted"
-      k8s_info:
+      kubernetes.core.k8s_info:
         kind: Job
         name: "{{ k6_job_name_to_cleanup }}-test"
         namespace: "{{ k6_test_namespace }}"
@@ -32,7 +32,7 @@
       when: k6_job_to_delete.resources | length > 0
 
     - name: "Discover Pushgateway Route"
-      k8s_info:
+      kubernetes.core.k8s_info:
         api_version: route.openshift.io/v1
         kind: Route
         name: "pushgateway"

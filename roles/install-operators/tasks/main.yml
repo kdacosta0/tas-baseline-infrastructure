@@ -6,15 +6,15 @@
   changed_when: false
 
 - name: Install Keycloak Operator from Kustomize output
-  k8s:
+  kubernetes.core.k8s:
     state: present
     definition: "{{ kustomize_operator_output.stdout }}"
 
 - name: "Wait for Keycloak Operator to be ready"
-  k8s_info:
+  kubernetes.core.k8s_info:
     api_version: operators.coreos.com/v1alpha1
     kind: ClusterServiceVersion
-    namespace: "keycloak-system" 
+    namespace: "keycloak-system"
     label_selectors:
       - "operators.coreos.com/rhsso-operator.keycloak-system"
   register: keycloak_csv_status
@@ -26,7 +26,7 @@
     keycloak_csv_status.resources[0].status.phase == "Succeeded"
 
 - name: "Install RHTAS Operator"
-  k8s:
+  kubernetes.core.k8s:
     definition:
       apiVersion: operators.coreos.com/v1alpha1
       kind: Subscription
@@ -41,7 +41,7 @@
         sourceNamespace: "{{ operators.rhtas.sourceNamespace }}"
 
 - name: "Wait for RHTAS Operator to be ready"
-  k8s_info:
+  kubernetes.core.k8s_info:
     api_version: operators.coreos.com/v1alpha1
     kind: ClusterServiceVersion
     namespace: "{{ operators.rhtas.namespace }}"
@@ -55,8 +55,8 @@
     rhtas_csv_status.resources[0].status is defined and
     rhtas_csv_status.resources[0].status.phase == "Succeeded"
 
-- name: "Install Grafana Operator"  
-  k8s:
+- name: "Install Grafana Operator"
+  kubernetes.core.k8s:
     definition:
       apiVersion: operators.coreos.com/v1alpha1
       kind: Subscription
@@ -71,7 +71,7 @@
         sourceNamespace: "{{ operators.grafana.sourceNamespace }}"
 
 - name: "Wait for Grafana Operator to be ready"
-  k8s_info:
+  kubernetes.core.k8s_info:
     api_version: operators.coreos.com/v1alpha1
     kind: ClusterServiceVersion
     namespace: "{{ operators.grafana.namespace }}"

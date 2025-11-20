@@ -37,8 +37,8 @@ if [ ! -f "${VENV_DIR}/bin/ansible-playbook" ]; then
     python3 -m venv "${VENV_DIR}"
     
     # Install Python dependencies into the venv
-    echo -e "${YELLOW}Installing ansible-core, kubernetes, and PyYAML...${NC}"
-    "${VENV_DIR}/bin/pip" install ansible-core kubernetes PyYAML
+    echo -e "${YELLOW}Installing Python dependencies from requirements.txt...${NC}"
+    "${VENV_DIR}/bin/pip" install -r requirements.txt
     
     # Install Ansible Kubernetes collection into the venv
     echo -e "${YELLOW}Installing Kubernetes collection...${NC}"

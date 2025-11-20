@@ -41,10 +41,12 @@ spec:
           value: "{{ k6_job_name }}"
         - name: OIDC_ISSUER_URL
           value: "{{ dynamic_oidc_issuer_url }}"
+        # OIDC credentials - defaults match Keycloak test user (jdoe/secure)
+        # Override via oidc_user and oidc_password variables if needed
         - name: OIDC_USER
-          value: "jdoe"
+          value: "{{ oidc_user | default('jdoe') }}"
         - name: OIDC_PASSWORD
-          value: "secure"
+          value: "{{ oidc_password | default('secure') }}"
         - name: OIDC_CLIENT_ID
           value: "trusted-artifact-signer"
         - name: FULCIO_URL

@@ -1,7 +1,7 @@
 # Deploy TAS Monitoring Stack (Grafana + Dashboards)
 ---
 - name: Find the trillian database secret to get credentials
-  k8s_info:
+  kubernetes.core.k8s_info:
     api_version: v1
     kind: Secret
     namespace: "{{ baseline_namespace }}"
@@ -17,13 +17,13 @@
     db_secret_name: "{{ trillian_db_secret_info.resources[0].metadata.name }}"
 
 - name: Deploy the Database Exporter Deployment
-  k8s:
+  kubernetes.core.k8s:
     state: present
     definition: "{{ lookup('template', 'db-exporter-deployment.yml.j2') }}"
   register: exporter_deployment_result
 
 - name: "Wait for Database Exporter deployment to be ready"
-  k8s_info:
+  kubernetes.core.k8s_info:
     api_version: apps/v1
     kind: Deployment
     name: "trillian-db-exporter"
@@ -36,22 +36,22 @@
   when: exporter_deployment_result.changed
 
 - name: Deploy the Database Exporter Service
-  k8s:
+  kubernetes.core.k8s:
     state: present
     definition: "{{ lookup('template', 'db-exporter-service.yml.j2') }}"
 
 - name: Deploy the Database Exporter ServiceMonitor
-  k8s:
+  kubernetes.core.k8s:
     state: present
     definition: "{{ lookup('template', 'db-servicemonitor.yml.j2') }}"
 
 - name: "Create Grafana ServiceAccount"
-  k8s:
+  kubernetes.core.k8s:
     definition: "{{ lookup('template', 'grafana-serviceaccount.yml.j2') | from_yaml }}"
     wait: true
 
 - name: "Grant cluster monitoring view permissions"
-  k8s:
+  kubernetes.core.k8s:
     api_version: rbac.authorization.k8s.io/v1
     kind: ClusterRoleBinding
     name: "grafana-reader-{{ baseline_namespace }}"
@@ -68,7 +68,7 @@
           namespace: "{{ baseline_namespace }}"
 
 - name: "Create ServiceAccount token secret"
-  k8s:
+  kubernetes.core.k8s:
     api_version: v1
     kind: Secret
     name: "grafana-token-{{ ansible_date_time.epoch }}"
@@ -86,7 +86,7 @@
   no_log: true
 
 - name: "Wait for token to be populated in secret"
-  k8s_info:
+  kubernetes.core.k8s_info:
     api_version: v1
     kind: Secret
     name: "{{ token_secret.result.metadata.name }}"
@@ -98,31 +98,31 @@
   no_log: true
 
 - name: "Extract and set token variable"
-  set_fact:
+  ansible.builtin.set_fact:
     grafana_token: "{{ token_info.resources[0].data.token | b64decode }}"
   no_log: true
 
 - name: "Deploy Grafana instance"
-  k8s:
+  kubernetes.core.k8s:
     definition: "{{ lookup('template', 'grafana-instance.yml.j2') | from_yaml }}"
     wait: true
     wait_timeout: 300
 
 - name: "Deploy Prometheus datasource"
-  k8s:
+  kubernetes.core.k8s:
     definition: "{{ lookup('template', 'grafana-datasource.yml.j2') | from_yaml }}"
     wait: true
 
 - name: "Deploy TAS performance dashboard"
-  k8s:
+  kubernetes.core.k8s:
     definition: "{{ lookup('template', 'grafana-dashboard.yml.j2') | from_yaml }}"
 
 - name: "Create Grafana route"
-  k8s:
+  kubernetes.core.k8s:
     definition: "{{ lookup('template', 'grafana-route.yml.j2') | from_yaml }}"
 
 - name: "Wait for Grafana deployment to be ready"
-  k8s_info:
+  kubernetes.core.k8s_info:
     api_version: apps/v1
     kind: Deployment
     name: "{{ monitoring.grafana.instance_name }}-deployment"
@@ -135,7 +135,7 @@
   register: grafana_deployment
 
 - name: "Get Grafana route URL"
-  k8s_info:
+  kubernetes.core.k8s_info:
     api_version: route.openshift.io/v1
     kind: Route
     name: "{{ monitoring.grafana.route_name }}"
@@ -143,12 +143,12 @@
   register: grafana_route_info
 
 - name: "Set Grafana URL fact"
-  set_fact:
+  ansible.builtin.set_fact:
     grafana_url: "https://{{ grafana_route_info.resources[0].spec.host }}"
   when: grafana_route_info.resources | length > 0
 
 - name: "Verify Grafana components are ready"
-  k8s_info:
+  kubernetes.core.k8s_info:
     api_version: grafana.integreatly.org/v1beta1
     kind: "{{ item.kind }}"
     name: "{{ item.name }}"
@@ -162,7 +162,7 @@
     label: "{{ item.kind }}/{{ item.name }}"
 
 - name: "TAS monitoring deployment completed!"
-  debug:
+  ansible.builtin.debug:
     msg:
       - "Monitoring Stack Summary:"
       - "   • Grafana Instance: {{ monitoring.grafana.instance_name }}"

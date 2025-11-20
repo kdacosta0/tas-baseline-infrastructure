@@ -1,4 +1,8 @@
 # Baseline Infrastructure Configuration
+# 
+# NOTE: This file contains default test values. For production deployments,
+# override these values using environment variables or Ansible Vault.
+# See README.md for configuration instructions.
 ---
 baseline:
   namespace: "tas-monitoring"
@@ -18,7 +22,8 @@ path_to_k8s_configs: "{{ playbook_dir }}"
 
 certificates:
   organization_name: "Red Hat"
-  organization_email: "jdoe@redhat.com"
+  # Default test email - override with certificates_org_email variable for production
+  organization_email: "{{ certificates_org_email | default('jdoe@redhat.com') }}"
   
   fulcio:
     common_name: "fulcio.hostname"
@@ -90,7 +95,7 @@ operators:
     name: "rhtas-operator"
     namespace: "openshift-operators"
     channel: "stable"
-    source: "rhtas-operator"
+    source: "redhat-operators"
     sourceNamespace: "openshift-marketplace"
     
   grafana:
@@ -104,8 +109,10 @@ monitoring:
   enabled: true
   grafana:
     instance_name: "tas-grafana"
-    admin_user: "admin"
-    admin_password: "admin"
+    # Default test credentials - MUST be changed for production!
+    # Override with grafana_admin_user and grafana_admin_password variables
+    admin_user: "{{ grafana_admin_user | default('admin') }}"
+    admin_password: "{{ grafana_admin_password | default('admin') }}"
     route_name: "tas-grafana-route"
     service_account: "grafana-reader"
     token_duration: "720h"
