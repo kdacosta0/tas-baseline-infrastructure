@@ -1,8 +1,4 @@
 # Baseline Infrastructure Configuration
-# 
-# NOTE: This file contains default test values. For production deployments,
-# override these values using environment variables or Ansible Vault.
-# See README.md for configuration instructions.
 ---
 baseline:
   namespace: "tas-monitoring"
@@ -22,7 +18,6 @@ path_to_k8s_configs: "{{ playbook_dir }}"
 
 certificates:
   organization_name: "Red Hat"
-  # Default test email - override with certificates_org_email variable for production
   organization_email: "{{ certificates_org_email | default('jdoe@redhat.com') }}"
   
   fulcio:
@@ -109,8 +104,6 @@ monitoring:
   enabled: true
   grafana:
     instance_name: "tas-grafana"
-    # Default test credentials - MUST be changed for production!
-    # Override with grafana_admin_user and grafana_admin_password variables
     admin_user: "{{ grafana_admin_user | default('admin') }}"
     admin_password: "{{ grafana_admin_password | default('admin') }}"
     route_name: "tas-grafana-route"

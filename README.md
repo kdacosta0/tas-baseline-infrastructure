@@ -4,7 +4,8 @@ This repository provides tools for deploying and conducting performance analysis
 
 ## Disclaimer
 
-> **Caution**: This repository is **not stable** and may change at any time. The content provided here **may be incompatible** with past, current, or future versions of Red Hat Trusted Artifact Signer (RHTAS).
+> [!CAUTION]
+> This repository is **not stable** and may change at any time. The content provided here **may be incompatible** with past, current, or future versions of Red Hat Trusted Artifact Signer (RHTAS).
 
 ## Prerequisites
 
@@ -67,7 +68,7 @@ make clean
 - **Grafana Admin**: `admin` / `admin`
 - **Certificate Email**: `jdoe@redhat.com`
 
-These are hardcoded for test environment compatibility. For production, override via Ansible variables or modify `group_vars/all.yml`.
+These are hardcoded for test environment compatibility.
 
 ## Monitoring
 
